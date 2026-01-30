@@ -177,9 +177,9 @@ export function TentangKami() {
                 return (
                   <div
                     key={item.year}
-                    className="grid items-center gap-6 md:grid-cols-[1fr_auto_1fr]"
+                    className="grid gap-6 md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] md:items-center"
                   >
-                    <div className="order-1 flex justify-center md:order-none md:col-start-2 md:z-10">
+                    <div className="order-1 flex justify-center md:order-none md:col-start-2 md:row-start-1 md:justify-self-center md:z-10">
                       <span
                         className={`flex h-10 w-10 items-center justify-center rounded-full shadow ring-4 ring-white ${accent.icon}`}
                       >
@@ -187,7 +187,7 @@ export function TentangKami() {
                       </span>
                     </div>
                     <div
-                      className={`order-2 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm md:order-none md:max-w-md ${
+                      className={`order-2 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm md:order-none md:row-start-1 md:max-w-md ${
                         isRight
                           ? "md:col-start-3 md:justify-self-start md:text-left"
                           : "md:col-start-1 md:justify-self-end md:text-right"
