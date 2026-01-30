@@ -159,7 +159,7 @@ export function TentangKami() {
             Linimasa Pengembangan Teknologi
           </h2>
           <div className="relative mt-12">
-            <div className="absolute left-1/2 top-0 hidden h-full w-px -translate-x-1/2 bg-gradient-to-b from-blue-500 via-blue-500/60 to-orange-500 md:block" />
+            <div className="absolute left-1/2 top-0 hidden h-full w-px -translate-x-1/2 bg-gradient-to-b from-blue-500 via-blue-500/60 to-orange-500 md:block md:z-0" />
             <div className="flex flex-col gap-10">
               {timeline.map((item, index) => {
                 const Icon = item.icon
@@ -179,7 +179,7 @@ export function TentangKami() {
                     key={item.year}
                     className="grid items-center gap-6 md:grid-cols-[1fr_auto_1fr]"
                   >
-                    <div className="order-1 flex justify-center md:order-none">
+                    <div className="order-1 flex justify-center md:order-none md:col-start-2 md:z-10">
                       <span
                         className={`flex h-10 w-10 items-center justify-center rounded-full shadow ring-4 ring-white ${accent.icon}`}
                       >
@@ -187,10 +187,10 @@ export function TentangKami() {
                       </span>
                     </div>
                     <div
-                      className={`order-2 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm md:order-none ${
+                      className={`order-2 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm md:order-none md:max-w-md ${
                         isRight
-                          ? "md:col-start-3 md:text-left"
-                          : "md:col-start-1 md:text-right"
+                          ? "md:col-start-3 md:justify-self-start md:text-left"
+                          : "md:col-start-1 md:justify-self-end md:text-right"
                       }`}
                     >
                       <div className={isRight ? "flex" : "flex justify-end"}>
