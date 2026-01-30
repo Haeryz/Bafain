@@ -9,7 +9,9 @@ type PageLayoutProps = {
 
 export function PageLayout({ children }: PageLayoutProps) {
   const [loginOpen, setLoginOpen] = useState(false)
-  const [loginMode, setLoginMode] = useState<"login" | "register">("login")
+  const [loginMode, setLoginMode] = useState<
+    "login" | "register" | "forgot"
+  >("login")
 
   useEffect(() => {
     if (loginOpen) {
