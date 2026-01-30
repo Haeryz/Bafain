@@ -1,3 +1,4 @@
+import { useEffect } from "react"
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom"
 import Beranda from "@/pages/Beranda"
 import Produk from "@/pages/Produk"
