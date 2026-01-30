@@ -40,7 +40,7 @@ export function AppFooter() {
               <Link to="/produk" className="transition hover:text-slate-900">
                 Produk
               </Link>
-              <Link to="/start#tentang-kami" className="transition hover:text-slate-900">
+              <Link to="/tentang-kami" className="transition hover:text-slate-900">
                 Tentang Kami
               </Link>
             </div>
