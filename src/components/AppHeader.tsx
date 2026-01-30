@@ -4,7 +4,7 @@ const navItems = [
   { label: "Beranda", to: "/beranda" },
   { label: "Teknologi", to: "/teknologi" },
   { label: "Produk", to: "/produk" },
-  { label: "Tentang Kami", to: "/start#tentang-kami" },
+  { label: "Tentang Kami", to: "/tentang-kami" },
 ]
 
 type AppHeaderProps = {
