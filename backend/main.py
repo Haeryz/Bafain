@@ -1,10 +1,15 @@
 import os
 
+from dotenv import load_dotenv
 from fastapi import FastAPI
 import redis
 
 from lib.supabase_client import get_supabase_client
 from routes.auth import router as auth_router
+from routes.products import router as products_router
+from routes.uploads import router as uploads_router
+
+load_dotenv()
 
 app = FastAPI(title="Bafain API")
 
@@ -20,6 +25,8 @@ def health():
 
 
 app.include_router(auth_router, prefix="/auth", tags=["auth"])
+app.include_router(products_router, prefix="/products", tags=["products"])
+app.include_router(uploads_router, prefix="/uploads", tags=["uploads"])
 
 
 if __name__ == "__main__":
