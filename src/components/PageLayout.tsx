@@ -9,6 +9,7 @@ type PageLayoutProps = {
 
 export function PageLayout({ children }: PageLayoutProps) {
   const [loginOpen, setLoginOpen] = useState(false)
+  const [loginMode, setLoginMode] = useState<"login" | "register">("login")
 
   useEffect(() => {
     if (loginOpen) {
@@ -22,10 +23,20 @@ export function PageLayout({ children }: PageLayoutProps) {
 
   return (
     <div className="flex min-h-screen flex-col bg-white font-['Manrope'] text-slate-900">
-      <AppHeader onLoginClick={() => setLoginOpen(true)} />
+      <AppHeader
+        onLoginClick={() => {
+          setLoginMode("login")
+          setLoginOpen(true)
+        }}
+      />
       <main className="flex-1">{children}</main>
       <AppFooter />
-      <LoginModal open={loginOpen} onClose={() => setLoginOpen(false)} />
+      <LoginModal
+        open={loginOpen}
+        mode={loginMode}
+        onClose={() => setLoginOpen(false)}
+        onSwitchMode={(mode) => setLoginMode(mode)}
+      />
     </div>
   )
 }
