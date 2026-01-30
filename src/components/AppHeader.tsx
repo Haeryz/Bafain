@@ -16,7 +16,7 @@ export function AppHeader({ onLoginClick }: AppHeaderProps) {
     <header className="sticky top-0 z-50 border-b border-slate-200/70 bg-white/85 backdrop-blur">
       <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-4">
         <div className="flex items-center gap-4">
-          <Link to="/start" className="flex items-center gap-2">
+          <Link to="/beranda" className="flex items-center gap-2">
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-orange-500 text-white">
               <span className="text-lg font-semibold">B</span>
             </span>
