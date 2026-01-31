@@ -5,6 +5,7 @@ type LoginModalProps = {
   mode: "login" | "register" | "forgot"
   onClose: () => void
   onSwitchMode: (mode: "login" | "register" | "forgot") => void
+  onLoginSuccess?: () => void
 }
 
 export function LoginModal({
@@ -12,6 +13,7 @@ export function LoginModal({
   mode,
   onClose,
   onSwitchMode,
+  onLoginSuccess,
 }: LoginModalProps) {
   if (!open) return null
 
@@ -125,7 +127,14 @@ export function LoginModal({
             </div>
           )}
           <button
-            type="submit"
+            type="button"
+            onClick={() => {
+              if (!isRegister && !isForgot) {
+                onLoginSuccess?.()
+                onClose()
+                return
+              }
+            }}
             className="w-full cursor-pointer rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
           >
             {isRegister ? "Sign Up now" : isForgot ? "Send Reset Link" : "Login now"}

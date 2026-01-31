@@ -1,4 +1,6 @@
+import { useState } from "react"
 import { Link, NavLink } from "react-router-dom"
+import { LogOut, User } from "lucide-react"
 
 const navItems = [
   { label: "Beranda", to: "/beranda" },
@@ -9,9 +11,13 @@ const navItems = [
 
 type AppHeaderProps = {
   onLoginClick?: () => void
+  isLoggedIn?: boolean
+  onLogout?: () => void
 }
 
-export function AppHeader({ onLoginClick }: AppHeaderProps) {
+export function AppHeader({ onLoginClick, isLoggedIn, onLogout }: AppHeaderProps) {
+  const [menuOpen, setMenuOpen] = useState(false)
+
   return (
     <header className="sticky top-0 z-50 border-b border-slate-200/70 bg-white/85 backdrop-blur">
       <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-4">
@@ -50,20 +56,54 @@ export function AppHeader({ onLoginClick }: AppHeaderProps) {
           ))}
         </nav>
 
-        <div className="flex items-center gap-3">
+        <div className="relative flex items-center gap-3">
           <a
             href="#akses-akun"
             className="rounded-full border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-600 transition hover:border-slate-300 hover:text-slate-900 md:hidden"
           >
             Menu
           </a>
-          <button
-            type="button"
-            onClick={onLoginClick}
-            className="cursor-pointer rounded-full bg-blue-600 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
-          >
-            Masuk
-          </button>
+          {isLoggedIn ? (
+            <button
+              type="button"
+              onClick={() => setMenuOpen((prev) => !prev)}
+              className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:border-slate-300 hover:text-slate-900"
+              aria-haspopup="menu"
+              aria-expanded={menuOpen}
+            >
+              <User className="h-5 w-5" />
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={onLoginClick}
+              className="cursor-pointer rounded-full bg-blue-600 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
+            >
+              Masuk
+            </button>
+          )}
+          {isLoggedIn && menuOpen && (
+            <div className="absolute right-0 top-14 w-40 overflow-hidden rounded-xl border border-slate-200 bg-white text-sm shadow-lg">
+              <button
+                type="button"
+                className="flex w-full cursor-pointer items-center gap-2 px-4 py-3 text-left text-slate-700 transition hover:bg-slate-50"
+              >
+                <User className="h-4 w-4 text-slate-500" />
+                My Profile
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setMenuOpen(false)
+                  onLogout?.()
+                }}
+                className="flex w-full cursor-pointer items-center gap-2 px-4 py-3 text-left text-slate-700 transition hover:bg-slate-50"
+              >
+                <LogOut className="h-4 w-4 text-slate-500" />
+                Log out
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </header>
