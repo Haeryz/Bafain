@@ -27,7 +27,7 @@ export function AppFooter() {
                   target="_blank"
                   rel="noreferrer"
                   aria-label={item.label}
-                  className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition hover:border-slate-300 hover:text-slate-700"
+                  className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-slate-200 bg-white text-orange-500 transition hover:border-slate-300 hover:text-orange-600"
                 >
                   <item.icon className="h-4 w-4" />
                 </a>
