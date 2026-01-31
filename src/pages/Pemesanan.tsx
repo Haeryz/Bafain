@@ -41,7 +41,9 @@ export function Pemesanan() {
     <PageLayout>
       <section className="mx-auto w-full max-w-6xl px-6 pb-20 pt-12 md:pt-16">
         <div>
-          <p className="text-sm font-semibold text-blue-600">Pemesanan</p>
+          <p className="text-sm font-semibold text-blue-600">
+            Pemesanan<span className="text-slate-400">/Pembayaran</span>
+          </p>
           <p className="mt-2 text-sm text-slate-500">
             Pantau status dan pengiriman pesanan mesin pengering udang Anda
           </p>
