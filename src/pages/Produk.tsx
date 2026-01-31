@@ -1,4 +1,5 @@
 import { CheckCircle2 } from "lucide-react"
+import { Link } from "react-router-dom"
 import PageLayout from "@/components/PageLayout"
 
 const productFeatures = [
@@ -110,9 +111,12 @@ export function Produk() {
               </div>
             </div>
 
-            <button className="mt-8 rounded-full bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700">
+            <Link
+              to="/pemesanan"
+              className="mt-8 inline-flex rounded-full bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
+            >
               Pesan Sekarang
-            </button>
+            </Link>
           </div>
         </div>
       </section>
