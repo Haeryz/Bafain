@@ -1,3 +1,4 @@
+import { useMemo, useState } from "react"
 import {
   Calendar,
   Check,
@@ -52,6 +53,26 @@ const lastOrders = [
 ]
 
 export function Profile() {
+  const [isEditing, setIsEditing] = useState(false)
+  const [profile, setProfile] = useState({
+    fullName: "Google User",
+    email: "user@gmail.com",
+    phone: "081234567890",
+    company: "-",
+    address: "Jakarta, Indonesia",
+    joinedDate: "2025-11-30",
+  })
+
+  const formattedJoinedDate = useMemo(() => {
+    const date = new Date(profile.joinedDate)
+    if (Number.isNaN(date.getTime())) return profile.joinedDate
+    return date.toLocaleDateString("id-ID", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    })
+  }, [profile.joinedDate])
+
   return (
     <PageLayout>
       <section className="mx-auto w-full max-w-6xl px-6 pb-20 pt-12 md:pt-16">
@@ -72,19 +93,23 @@ export function Profile() {
                   <User className="h-7 w-7" />
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-slate-900">
-                    Google User
-                  </p>
-                  <p className="text-xs text-slate-500">user@gmail.com</p>
-                  <span className="mt-2 inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-600">
-                    <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                    Aktif
-                  </span>
-                </div>
+                <p className="text-sm font-semibold text-slate-900">
+                  {profile.fullName}
+                </p>
+                <p className="text-xs text-slate-500">{profile.email}</p>
+                <span className="mt-2 inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-600">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                  Aktif
+                </span>
               </div>
-              <button className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-slate-300">
+            </div>
+              <button
+                type="button"
+                onClick={() => setIsEditing((prev) => !prev)}
+                className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-slate-300"
+              >
                 <Pencil className="h-4 w-4 text-slate-500" />
-                Edit Profil
+                {isEditing ? "Simpan Profil" : "Edit Profil"}
               </button>
             </div>
 
@@ -94,54 +119,138 @@ export function Profile() {
                   <User className="h-4 w-4" />
                   Nama Lengkap
                 </p>
-                <div className="mt-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
-                  Google User
-                </div>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={profile.fullName}
+                    onChange={(event) =>
+                      setProfile((prev) => ({
+                        ...prev,
+                        fullName: event.target.value,
+                      }))
+                    }
+                    className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none focus:border-blue-500"
+                  />
+                ) : (
+                  <div className="mt-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+                    {profile.fullName}
+                  </div>
+                )}
               </div>
               <div>
                 <p className="flex items-center gap-2 text-xs font-semibold text-slate-500">
                   <Mail className="h-4 w-4" />
                   Email
                 </p>
-                <div className="mt-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
-                  user@gmail.com
-                </div>
+                {isEditing ? (
+                  <input
+                    type="email"
+                    value={profile.email}
+                    onChange={(event) =>
+                      setProfile((prev) => ({
+                        ...prev,
+                        email: event.target.value,
+                      }))
+                    }
+                    className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none focus:border-blue-500"
+                  />
+                ) : (
+                  <div className="mt-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+                    {profile.email}
+                  </div>
+                )}
               </div>
               <div>
                 <p className="flex items-center gap-2 text-xs font-semibold text-slate-500">
                   <Phone className="h-4 w-4" />
                   Nomor Telepon
                 </p>
-                <div className="mt-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
-                  081234567890
-                </div>
+                {isEditing ? (
+                  <input
+                    type="tel"
+                    value={profile.phone}
+                    onChange={(event) =>
+                      setProfile((prev) => ({
+                        ...prev,
+                        phone: event.target.value,
+                      }))
+                    }
+                    className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none focus:border-blue-500"
+                  />
+                ) : (
+                  <div className="mt-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+                    {profile.phone}
+                  </div>
+                )}
               </div>
               <div>
                 <p className="flex items-center gap-2 text-xs font-semibold text-slate-500">
                   <Building2 className="h-4 w-4" />
                   Perusahaan
                 </p>
-                <div className="mt-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
-                  -
-                </div>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={profile.company}
+                    onChange={(event) =>
+                      setProfile((prev) => ({
+                        ...prev,
+                        company: event.target.value,
+                      }))
+                    }
+                    className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none focus:border-blue-500"
+                  />
+                ) : (
+                  <div className="mt-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+                    {profile.company}
+                  </div>
+                )}
               </div>
               <div className="md:col-span-2">
                 <p className="flex items-center gap-2 text-xs font-semibold text-slate-500">
                   <MapPin className="h-4 w-4" />
                   Alamat
                 </p>
-                <div className="mt-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
-                  Jakarta, Indonesia
-                </div>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={profile.address}
+                    onChange={(event) =>
+                      setProfile((prev) => ({
+                        ...prev,
+                        address: event.target.value,
+                      }))
+                    }
+                    className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none focus:border-blue-500"
+                  />
+                ) : (
+                  <div className="mt-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+                    {profile.address}
+                  </div>
+                )}
               </div>
               <div className="md:col-span-2">
                 <p className="flex items-center gap-2 text-xs font-semibold text-slate-500">
                   <Calendar className="h-4 w-4" />
                   Tanggal Bergabung
                 </p>
-                <div className="mt-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
-                  30 November 2025
-                </div>
+                {isEditing ? (
+                  <input
+                    type="date"
+                    value={profile.joinedDate}
+                    onChange={(event) =>
+                      setProfile((prev) => ({
+                        ...prev,
+                        joinedDate: event.target.value,
+                      }))
+                    }
+                    className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none focus:border-blue-500"
+                  />
+                ) : (
+                  <div className="mt-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+                    {formattedJoinedDate}
+                  </div>
+                )}
               </div>
             </div>
           </div>
