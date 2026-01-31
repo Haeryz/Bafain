@@ -1,5 +1,6 @@
 import { useState } from "react"
 import PageLayout from "@/components/PageLayout"
+import { Link } from "react-router-dom"
 
 const shippingOptions = [
   {
@@ -269,9 +270,12 @@ export function Pemesanan() {
                 <span className="text-orange-500">Rp 550.000</span>
               </div>
             </div>
-            <button className="mt-6 w-full cursor-pointer rounded-full bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700">
+            <Link
+              to="/pembayaran"
+              className="mt-6 inline-flex w-full cursor-pointer items-center justify-center rounded-xl bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
+            >
               Bayar Sekarang
-            </button>
+            </Link>
           </div>
         </div>
       </section>
