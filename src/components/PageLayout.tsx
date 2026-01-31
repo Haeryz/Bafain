@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react"
-import { useNavigate } from "react-router-dom"
+import { useLocation, useNavigate } from "react-router-dom"
 import AppFooter from "./AppFooter"
 import AppHeader from "./AppHeader"
 import LoginModal from "./LoginModal"
@@ -17,6 +17,7 @@ export function PageLayout({ children }: PageLayoutProps) {
     () => window.localStorage.getItem("bafain:isLoggedIn") === "true"
   )
   const navigate = useNavigate()
+  const location = useLocation()
 
   useEffect(() => {
     if (loginOpen) {
@@ -41,6 +42,7 @@ export function PageLayout({ children }: PageLayoutProps) {
       section.classList.add(
         "opacity-0",
         "translate-y-6",
+        "pointer-events-none",
         "transition-all",
         "duration-700",
         "ease-out"
@@ -49,13 +51,23 @@ export function PageLayout({ children }: PageLayoutProps) {
     })
 
     const observer = new IntersectionObserver(
-      (entries, obs) => {
+      (entries) => {
         entries.forEach((entry) => {
+          const target = entry.target as HTMLElement
           if (entry.isIntersecting) {
-            const target = entry.target as HTMLElement
-            target.classList.remove("opacity-0", "translate-y-6")
+            target.classList.remove(
+              "opacity-0",
+              "translate-y-6",
+              "pointer-events-none"
+            )
             target.classList.add("opacity-100", "translate-y-0")
-            obs.unobserve(target)
+          } else {
+            target.classList.add(
+              "opacity-0",
+              "translate-y-6",
+              "pointer-events-none"
+            )
+            target.classList.remove("opacity-100", "translate-y-0")
           }
         })
       },
@@ -65,7 +77,7 @@ export function PageLayout({ children }: PageLayoutProps) {
     sections.forEach((section) => observer.observe(section))
 
     return () => observer.disconnect()
-  }, [])
+  }, [location.pathname])
 
   return (
     <div className="flex min-h-screen flex-col bg-white font-['Manrope'] text-slate-900">
