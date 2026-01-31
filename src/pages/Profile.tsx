@@ -12,6 +12,7 @@ import {
   ClipboardList,
 } from "lucide-react"
 import PageLayout from "@/components/PageLayout"
+import { Link } from "react-router-dom"
 
 const stats = [
   {
@@ -306,9 +307,12 @@ export function Profile() {
                   </div>
                 ))}
               </div>
-              <button className="mt-5 w-full rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700">
+              <Link
+                to="/lacak-pesanan"
+                className="mt-5 flex w-full cursor-pointer items-center justify-center rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
+              >
                 Lihat Semua Pesanan
-              </button>
+              </Link>
             </div>
           </div>
         </div>
