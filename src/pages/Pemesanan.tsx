@@ -34,15 +34,30 @@ const paymentMethods = [
 
 export function Pemesanan() {
   const [selectedShipping, setSelectedShipping] = useState("standar")
-  const [selectedPayment, setSelectedPayment] = useState("bca")
+  const [selectedPayment, setSelectedPayment] = useState(
+    () => window.localStorage.getItem("bafain:paymentMethod") || "bca"
+  )
   const [showAllPayments, setShowAllPayments] = useState(false)
+
+  const handlePaymentChange = (methodId: string, methodLabel: string) => {
+    setSelectedPayment(methodId)
+    window.localStorage.setItem("bafain:paymentMethod", methodId)
+    window.localStorage.setItem("bafain:paymentLabel", methodLabel)
+  }
 
   return (
     <PageLayout>
       <section className="mx-auto w-full max-w-6xl px-6 pb-20 pt-12 md:pt-16">
         <div>
-          <p className="text-sm font-semibold text-blue-600">
-            Pemesanan<span className="text-slate-400">/Pembayaran</span>
+          <p className="text-sm font-semibold text-slate-400">
+            <span className="text-blue-600">Pemesanan</span>{" "}
+            <span className="text-slate-400">/</span>{" "}
+            <a
+              href="/pembayaran"
+              className="cursor-pointer text-slate-400 transition hover:text-blue-600"
+            >
+              Pembayaran
+            </a>
           </p>
           <p className="mt-2 text-sm text-slate-500">
             Pantau status dan pengiriman pesanan mesin pengering udang Anda
@@ -217,7 +232,7 @@ export function Pemesanan() {
                     <button
                       key={method.id}
                       type="button"
-                      onClick={() => setSelectedPayment(method.id)}
+                      onClick={() => handlePaymentChange(method.id, method.label)}
                       className={`flex w-full cursor-pointer items-center gap-3 rounded-xl border px-4 py-4 text-left transition ${
                         isActive
                           ? "border-blue-500 bg-blue-50/40"
