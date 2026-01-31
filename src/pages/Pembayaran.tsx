@@ -22,6 +22,43 @@ const paymentSteps = [
 export function Pembayaran() {
   const [showCopied, setShowCopied] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
+  const selectedPaymentId =
+    window.localStorage.getItem("bafain:paymentMethod") || "bca"
+  const selectedPaymentLabel =
+    window.localStorage.getItem("bafain:paymentLabel") || "BCA Virtual Account"
+
+  const paymentCodeMap: Record<string, string> = {
+    bca: "BCA",
+    mandiri: "Mandiri",
+    bri: "BRI",
+    bni: "BNI",
+    jatim: "Jatim",
+    bsi: "BSI",
+    jateng: "Jateng",
+    jago: "Jago",
+    "jago-syariah": "Jago Syariah",
+    seabank: "Seabank",
+    dana: "DANA",
+    "bca-syariah": "BCA Syariah",
+  }
+
+  const vaNumberMap: Record<string, string> = {
+    bca: "6 8001 08214456789",
+    mandiri: "8890 0001 234567890",
+    bri: "8810 0022 334455667",
+    bni: "9880 1133 44556677",
+    jatim: "8201 4455 66778899",
+    bsi: "4050 7788 99001122",
+    jateng: "8640 2233 44556677",
+    jago: "9001 7788 99001122",
+    "jago-syariah": "9002 8899 00112233",
+    seabank: "9021 6677 88990011",
+    dana: "0857 1234 5678",
+    "bca-syariah": "2050 9911 22334455",
+  }
+
+  const paymentCode = paymentCodeMap[selectedPaymentId] || "BCA"
+  const vaNumber = vaNumberMap[selectedPaymentId] || "6 8001 08214456789"
 
   useEffect(() => {
     if (!showCopied) return
@@ -30,7 +67,6 @@ export function Pembayaran() {
   }, [showCopied])
 
   const handleCopyVa = async () => {
-    const vaNumber = "6 8001 08214456789"
     try {
       await navigator.clipboard.writeText(vaNumber.replace(/\s/g, ""))
     } catch {
@@ -71,7 +107,13 @@ export function Pembayaran() {
       <section className="mx-auto w-full max-w-6xl px-6 pb-20 pt-12 md:pt-16">
         <div>
           <p className="text-sm font-semibold text-slate-400">
-            Pemesanan <span className="text-slate-400">/</span>{" "}
+            <a
+              href="/pemesanan"
+              className="cursor-pointer text-slate-400 transition hover:text-blue-600"
+            >
+              Pemesanan
+            </a>{" "}
+            <span className="text-slate-400">/</span>{" "}
             <span className="text-blue-600">Pembayaran</span>
           </p>
           <p className="mt-2 text-sm text-slate-500">
@@ -98,11 +140,13 @@ export function Pembayaran() {
                 Lakukan Transfer ke
               </p>
               <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
-                <span className="text-xs font-semibold text-blue-600">BCA</span>
-                <span>BCA Virtual Account</span>
+                <span className="text-xs font-semibold text-blue-600">
+                  {paymentCode}
+                </span>
+                <span>{selectedPaymentLabel}</span>
               </div>
               <div className="relative flex items-center justify-between rounded-xl bg-blue-50 px-4 py-3 text-sm font-semibold text-slate-900">
-                <span>6 8001 08214456789</span>
+                <span>{vaNumber}</span>
                 <button
                   type="button"
                   onClick={handleCopyVa}
