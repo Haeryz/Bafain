@@ -35,10 +35,10 @@ export function Beranda() {
         <section className="mx-auto w-full max-w-6xl px-6 pb-16 pt-12 md:pb-20 md:pt-16">
           <div className="flex flex-col items-center gap-8 text-center">
             <div>
-              <h1 className="font-['Sora'] text-3xl font-semibold leading-tight text-slate-900 sm:text-4xl md:text-5xl">
+              <h1 className="font-['Sora'] text-3xl font-semibold text-slate-900 md:text-4xl">
                 Solar Dryer Pengering Udang Tenaga Surya
               </h1>
-              <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-slate-600 sm:text-base">
+              <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-slate-600">
                 Pengering Udang Tenaga Surya kami adalah terobosan dalam
                 pengolahan hasil laut, menawarkan efisiensi tanpa banding,
                 higienis, dan ramah lingkungan. Optimalkan kualitas produk dan
