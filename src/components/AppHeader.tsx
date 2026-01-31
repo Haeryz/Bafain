@@ -84,13 +84,14 @@ export function AppHeader({ onLoginClick, isLoggedIn, onLogout }: AppHeaderProps
           )}
           {isLoggedIn && menuOpen && (
             <div className="absolute right-0 top-14 w-40 overflow-hidden rounded-xl border border-slate-200 bg-white text-sm shadow-lg">
-              <button
-                type="button"
+              <Link
+                to="/profile"
+                onClick={() => setMenuOpen(false)}
                 className="flex w-full cursor-pointer items-center gap-2 px-4 py-3 text-left text-slate-700 transition hover:bg-slate-50"
               >
                 <User className="h-4 w-4 text-slate-500" />
                 My Profile
-              </button>
+              </Link>
               <button
                 type="button"
                 onClick={() => {
