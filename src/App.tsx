@@ -4,6 +4,7 @@ import Beranda from "@/pages/Beranda"
 import Pemesanan from "@/pages/Pemesanan"
 import Pembayaran from "@/pages/Pembayaran"
 import Profile from "@/pages/Profile"
+import LacakPesanan from "@/pages/LacakPesanan"
 import Produk from "@/pages/Produk"
 import Start from "@/pages/Start"
 import TentangKami from "@/pages/TentangKami"
@@ -32,6 +33,7 @@ export function App() {
         <Route path="/pemesanan" element={<Pemesanan />} />
         <Route path="/pembayaran" element={<Pembayaran />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/lacak-pesanan" element={<LacakPesanan />} />
         <Route path="/tentang-kami" element={<TentangKami />} />
       </Routes>
     </BrowserRouter>
