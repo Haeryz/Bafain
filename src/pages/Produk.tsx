@@ -136,7 +136,7 @@ export function Produk() {
               </p>
             </div>
             <div className="grid">
-              <div className="grid grid-cols-[1.1fr_1.3fr] gap-4 border-b border-slate-200 bg-slate-50 px-6 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+              <div className="grid grid-cols-[1.1fr_1.3fr] gap-4 border-b border-blue-100 bg-blue-50 px-6 py-3 text-xs font-semibold uppercase tracking-wide text-blue-600">
                 <span>Spesifikasi</span>
                 <span>Nilai</span>
               </div>
