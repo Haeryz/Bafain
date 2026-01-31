@@ -165,17 +165,17 @@ export function Start() {
 
               <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6 shadow-sm">
                 <div className="flex flex-wrap gap-2">
-                  {authTabs.map((tab) => (
-                    <button
-                      key={tab.key}
-                      type="button"
-                      onClick={() => setActiveTab(tab.key)}
-                      className={`rounded-full px-4 py-2 text-xs font-semibold transition ${
-                        activeTab === tab.key
-                          ? "bg-blue-600 text-white"
-                          : "bg-white text-slate-600 hover:text-slate-900"
-                      }`}
-                    >
+                {authTabs.map((tab) => (
+                  <button
+                    key={tab.key}
+                    type="button"
+                    onClick={() => setActiveTab(tab.key)}
+                    className={`cursor-pointer rounded-full px-4 py-2 text-xs font-semibold transition ${
+                      activeTab === tab.key
+                        ? "bg-blue-600 text-white"
+                        : "bg-white text-slate-600 hover:text-slate-900"
+                    }`}
+                  >
                       {tab.label}
                     </button>
                   ))}
@@ -205,7 +205,7 @@ export function Start() {
                     </div>
                     <button
                       type="submit"
-                      className="w-full rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
+                      className="w-full cursor-pointer rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
                     >
                       Masuk
                     </button>
@@ -246,7 +246,7 @@ export function Start() {
                     </div>
                     <button
                       type="submit"
-                      className="w-full rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
+                      className="w-full cursor-pointer rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
                     >
                       Daftar Akun
                     </button>
@@ -267,7 +267,7 @@ export function Start() {
                     </div>
                     <button
                       type="submit"
-                      className="w-full rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
+                      className="w-full cursor-pointer rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
                     >
                       Kirim Instruksi Reset
                     </button>

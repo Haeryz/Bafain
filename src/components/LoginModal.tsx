@@ -49,7 +49,7 @@ export function LoginModal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+            className="cursor-pointer rounded-full p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
             aria-label="Close"
           >
             <X className="h-4 w-4" />
@@ -98,7 +98,7 @@ export function LoginModal({
                 {!isRegister && (
                   <button
                     type="button"
-                    className="text-xs font-semibold text-blue-600"
+                    className="cursor-pointer text-xs font-semibold text-blue-600"
                     onClick={() => onSwitchMode("forgot")}
                   >
                     Forgot ?
@@ -126,7 +126,7 @@ export function LoginModal({
           )}
           <button
             type="submit"
-            className="w-full rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
+            className="w-full cursor-pointer rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
           >
             {isRegister ? "Sign Up now" : isForgot ? "Send Reset Link" : "Login now"}
           </button>
@@ -142,7 +142,7 @@ export function LoginModal({
 
             <button
               type="button"
-              className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs font-semibold text-slate-700 transition hover:border-slate-300"
+              className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs font-semibold text-slate-700 transition hover:border-slate-300"
             >
               <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white text-[10px] font-bold text-blue-600">
                 G
@@ -160,7 +160,7 @@ export function LoginModal({
             : "Don't Have An Account? "}
           <button
             type="button"
-            className="font-semibold text-blue-600"
+            className="cursor-pointer font-semibold text-blue-600"
             onClick={() =>
               onSwitchMode(isRegister || isForgot ? "login" : "register")
             }

@@ -60,7 +60,7 @@ export function AppHeader({ onLoginClick }: AppHeaderProps) {
           <button
             type="button"
             onClick={onLoginClick}
-            className="rounded-full bg-blue-600 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
+            className="cursor-pointer rounded-full bg-blue-600 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
           >
             Masuk
           </button>
