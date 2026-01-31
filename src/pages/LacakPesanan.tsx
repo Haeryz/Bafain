@@ -54,6 +54,7 @@ const orders = [
 
 export function LacakPesanan() {
   const [activeTab, setActiveTab] = useState("Semua")
+  const [searchTerm, setSearchTerm] = useState("")
 
   const tabs = useMemo(() => {
     const statusCounts = orders.reduce<Record<string, number>>((acc, order) => {
@@ -73,6 +74,23 @@ export function LacakPesanan() {
     activeTab === "Semua"
       ? orders
       : orders.filter((order) => order.status === activeTab)
+
+  const filteredOrders = useMemo(() => {
+    const query = searchTerm.trim().toLowerCase()
+    if (!query) return visibleOrders
+    return visibleOrders.filter((order) => {
+      const haystack = [
+        order.id,
+        order.title,
+        order.address,
+        order.waybill,
+        order.status,
+      ]
+        .join(" ")
+        .toLowerCase()
+      return haystack.includes(query)
+    })
+  }, [searchTerm, visibleOrders])
 
   return (
     <PageLayout>
@@ -99,6 +117,8 @@ export function LacakPesanan() {
             <input
               type="text"
               placeholder="Cari nomor order atau nama produk..."
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
               className="w-full bg-transparent text-sm text-slate-700 outline-none"
             />
           </div>
@@ -121,7 +141,7 @@ export function LacakPesanan() {
         </div>
 
         <div className="mt-8 space-y-6">
-          {visibleOrders.map((order) => (
+          {filteredOrders.map((order) => (
             <div
               key={order.id}
               className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
