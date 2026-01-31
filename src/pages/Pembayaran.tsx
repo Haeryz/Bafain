@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react"
 import PageLayout from "@/components/PageLayout"
 
 const paymentSteps = [
@@ -19,6 +20,29 @@ const paymentSteps = [
 ]
 
 export function Pembayaran() {
+  const [showCopied, setShowCopied] = useState(false)
+
+  useEffect(() => {
+    if (!showCopied) return
+    const timeout = window.setTimeout(() => setShowCopied(false), 2500)
+    return () => window.clearTimeout(timeout)
+  }, [showCopied])
+
+  const handleCopyVa = async () => {
+    const vaNumber = "6 8001 08214456789"
+    try {
+      await navigator.clipboard.writeText(vaNumber.replace(/\s/g, ""))
+    } catch {
+      const input = document.createElement("input")
+      input.value = vaNumber.replace(/\s/g, "")
+      document.body.appendChild(input)
+      input.select()
+      document.execCommand("copy")
+      document.body.removeChild(input)
+    }
+    setShowCopied(true)
+  }
+
   return (
     <PageLayout>
       <section className="mx-auto w-full max-w-6xl px-6 pb-20 pt-12 md:pt-16">
@@ -54,14 +78,20 @@ export function Pembayaran() {
                 <span className="text-xs font-semibold text-blue-600">BCA</span>
                 <span>BCA Virtual Account</span>
               </div>
-              <div className="flex items-center justify-between rounded-xl bg-blue-50 px-4 py-3 text-sm font-semibold text-slate-900">
+              <div className="relative flex items-center justify-between rounded-xl bg-blue-50 px-4 py-3 text-sm font-semibold text-slate-900">
                 <span>6 8001 08214456789</span>
                 <button
                   type="button"
+                  onClick={handleCopyVa}
                   className="cursor-pointer text-xs font-semibold text-blue-600"
                 >
                   Salin
                 </button>
+                {showCopied && (
+                  <div className="absolute -top-10 right-0 rounded-full bg-slate-900 px-3 py-1 text-[11px] font-semibold text-white shadow-lg">
+                    Nomor Virtual Account berhasil di salin
+                  </div>
+                )}
               </div>
 
               <div className="pt-2">
