@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import {
   Calendar,
   Check,
@@ -55,6 +55,7 @@ const lastOrders = [
 
 export function Profile() {
   const [isEditing, setIsEditing] = useState(false)
+  const [showUpdated, setShowUpdated] = useState(false)
   const [profile, setProfile] = useState({
     fullName: "Google User",
     email: "user@gmail.com",
@@ -74,6 +75,12 @@ export function Profile() {
     })
   }, [profile.joinedDate])
 
+  useEffect(() => {
+    if (!showUpdated) return
+    const timeout = window.setTimeout(() => setShowUpdated(false), 2500)
+    return () => window.clearTimeout(timeout)
+  }, [showUpdated])
+
   return (
     <PageLayout>
       <section className="mx-auto w-full max-w-6xl px-6 pb-20 pt-12 md:pt-16">
@@ -88,7 +95,7 @@ export function Profile() {
 
         <div className="mt-10 grid gap-8 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,0.7fr)]">
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="relative flex flex-wrap items-center justify-between gap-4">
               <div className="flex items-center gap-4">
                 <div className="flex h-16 w-16 items-center justify-center rounded-full bg-blue-600 text-white">
                   <User className="h-7 w-7" />
@@ -106,12 +113,22 @@ export function Profile() {
             </div>
               <button
                 type="button"
-                onClick={() => setIsEditing((prev) => !prev)}
+                onClick={() => {
+                  if (isEditing) {
+                    setShowUpdated(true)
+                  }
+                  setIsEditing((prev) => !prev)
+                }}
                 className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-slate-300"
               >
                 <Pencil className="h-4 w-4 text-slate-500" />
                 {isEditing ? "Simpan Profil" : "Edit Profil"}
               </button>
+              {showUpdated && (
+                <div className="absolute right-28 top-1/2 -translate-y-1/2 inline-flex items-center gap-2 rounded-full bg-emerald-100 px-4 py-2 text-xs font-semibold text-emerald-700 shadow-sm">
+                  Profil berhasil di update
+                </div>
+              )}
             </div>
 
             <div className="mt-8 grid gap-4 md:grid-cols-2">
