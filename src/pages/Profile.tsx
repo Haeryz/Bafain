@@ -1,6 +1,7 @@
 import {
   Calendar,
   Check,
+  Pencil,
   Mail,
   MapPin,
   Phone,
@@ -16,14 +17,22 @@ const stats = [
     title: "Total Order",
     value: "8",
     icon: ClipboardList,
-    tone: "bg-blue-50 text-blue-600",
+    iconTone: "bg-blue-50 text-blue-600",
+    cardTone: "bg-blue-50/40",
   },
-  { title: "Aktif", value: "2", icon: Check, tone: "bg-emerald-50 text-emerald-600" },
+  {
+    title: "Aktif",
+    value: "2",
+    icon: Check,
+    iconTone: "bg-emerald-50 text-emerald-600",
+    cardTone: "bg-emerald-50/40",
+  },
   {
     title: "Selesai",
     value: "6",
     icon: ShoppingBag,
-    tone: "bg-orange-50 text-orange-600",
+    iconTone: "bg-orange-50 text-orange-600",
+    cardTone: "bg-orange-50/40",
   },
 ]
 
@@ -74,6 +83,7 @@ export function Profile() {
                 </div>
               </div>
               <button className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-slate-300">
+                <Pencil className="h-4 w-4 text-slate-500" />
                 Edit Profil
               </button>
             </div>
@@ -145,11 +155,11 @@ export function Profile() {
                 {stats.map((item) => (
                   <div
                     key={item.title}
-                    className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3"
+                    className={`flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3 ${item.cardTone}`}
                   >
                     <div className="flex items-center gap-3">
                       <span
-                        className={`flex h-10 w-10 items-center justify-center rounded-2xl ${item.tone}`}
+                        className={`flex h-10 w-10 items-center justify-center rounded-2xl ${item.iconTone}`}
                       >
                         <item.icon className="h-5 w-5" />
                       </span>
