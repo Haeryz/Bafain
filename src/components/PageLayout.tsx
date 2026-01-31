@@ -28,6 +28,45 @@ export function PageLayout({ children }: PageLayoutProps) {
     }
   }, [loginOpen])
 
+  useEffect(() => {
+    const sections = Array.from(
+      document.querySelectorAll("main section")
+    ) as HTMLElement[]
+
+    if (!sections.length) return
+
+    sections.forEach((section, index) => {
+      if (section.dataset.revealReady === "true") return
+      section.dataset.revealReady = "true"
+      section.classList.add(
+        "opacity-0",
+        "translate-y-6",
+        "transition-all",
+        "duration-700",
+        "ease-out"
+      )
+      section.style.transitionDelay = `${index * 80}ms`
+    })
+
+    const observer = new IntersectionObserver(
+      (entries, obs) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const target = entry.target as HTMLElement
+            target.classList.remove("opacity-0", "translate-y-6")
+            target.classList.add("opacity-100", "translate-y-0")
+            obs.unobserve(target)
+          }
+        })
+      },
+      { threshold: 0.2 }
+    )
+
+    sections.forEach((section) => observer.observe(section))
+
+    return () => observer.disconnect()
+  }, [])
+
   return (
     <div className="flex min-h-screen flex-col bg-white font-['Manrope'] text-slate-900">
       <AppHeader
