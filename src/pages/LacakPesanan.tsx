@@ -79,7 +79,13 @@ export function LacakPesanan() {
       <section className="mx-auto w-full max-w-6xl px-6 pb-20 pt-12 md:pt-16">
         <div>
           <p className="text-sm font-semibold text-slate-400">
-            Profil Saya <span className="text-slate-400">/</span>{" "}
+            <a
+              href="/profile"
+              className="cursor-pointer text-slate-500 transition hover:text-blue-600"
+            >
+              Profil Saya
+            </a>{" "}
+            <span className="text-slate-400">/</span>{" "}
             <span className="text-blue-600">Lacak Pesanan</span>
           </p>
           <p className="mt-2 text-sm text-slate-500">
