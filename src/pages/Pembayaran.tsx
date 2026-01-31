@@ -21,6 +21,7 @@ const paymentSteps = [
 
 export function Pembayaran() {
   const [showCopied, setShowCopied] = useState(false)
+  const [showSuccess, setShowSuccess] = useState(false)
 
   useEffect(() => {
     if (!showCopied) return
@@ -45,6 +46,28 @@ export function Pembayaran() {
 
   return (
     <PageLayout>
+      {showSuccess && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-900/40 px-6">
+          <button
+            type="button"
+            aria-label="Tutup"
+            className="absolute inset-0 h-full w-full cursor-pointer"
+            onClick={() => setShowSuccess(false)}
+          />
+          <div className="relative w-full max-w-lg rounded-2xl bg-white p-8 text-center shadow-2xl">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100">
+              <span className="text-2xl font-bold text-emerald-600">✓</span>
+            </div>
+            <h3 className="mt-4 font-['Sora'] text-2xl font-semibold text-slate-900">
+              Pembayaran Telah Berhasil
+            </h3>
+            <p className="mt-2 text-sm text-slate-500">
+              Terima kasih atas pembelian Anda. Kami telah menerima pesanan Anda
+              dan akan segera memprosesnya.
+            </p>
+          </div>
+        </div>
+      )}
       <section className="mx-auto w-full max-w-6xl px-6 pb-20 pt-12 md:pt-16">
         <div>
           <p className="text-sm font-semibold text-slate-400">
@@ -137,7 +160,11 @@ export function Pembayaran() {
             <p className="mt-6 text-xs text-slate-400">
               hanya klik tombol dibawah saat sudah melakukan pembayaran
             </p>
-            <button className="mt-3 w-full rounded-xl bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-600 transition hover:bg-blue-100">
+            <button
+              type="button"
+              onClick={() => setShowSuccess(true)}
+              className="mt-3 w-full cursor-pointer rounded-xl bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-600 transition hover:bg-blue-100"
+            >
               Cek Status Pembayaran
             </button>
           </div>
