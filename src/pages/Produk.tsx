@@ -74,7 +74,7 @@ export function Produk() {
     <PageLayout>
       <section className="mx-auto w-full max-w-6xl px-6 pb-16 pt-12 md:pb-20 md:pt-16">
         <div className="grid items-center gap-10 md:grid-cols-[1.05fr_0.95fr]">
-          <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+          <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-md">
             <img
               src="/hero-team.svg"
               alt="Solar dryer tenaga surya"
@@ -122,7 +122,7 @@ export function Produk() {
           <h2 className="text-center font-['Sora'] text-2xl font-semibold text-slate-900 md:text-3xl">
             Spesifikasi Teknis
           </h2>
-          <div className="mt-8 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="mt-8 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-md">
             <div className="border-b border-slate-200 bg-slate-50 px-6 py-4">
               <p className="text-sm font-semibold text-slate-900">
                 Tabel Spesifikasi Utama
@@ -163,7 +163,7 @@ export function Produk() {
             {benefits.map((benefit) => (
               <div
                 key={benefit.title}
-                className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
+                className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md"
               >
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-orange-50 text-orange-500">
                   <CheckCircle2 className="h-6 w-6" />
@@ -189,7 +189,7 @@ export function Produk() {
             {galleryItems.map((item) => (
               <div
                 key={item.title}
-                className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
+                className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-md"
               >
                 <img
                   src="/hero-team.svg"
