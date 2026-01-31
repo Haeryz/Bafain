@@ -26,15 +26,3 @@ class CartItemDeleteResponse(BaseModel):
   message: str
   item_id: str
   deleted: bool = True
-
-
-class CheckoutSummaryRequest(BaseModel):
-  address: Optional[dict[str, Any]] = None
-  shipping_option: Optional[dict[str, Any]] = None
-
-
-class CheckoutSummaryResponse(BaseModel):
-  subtotal: int
-  shipping_fee: int
-  total: int
-  currency: str = "IDR"

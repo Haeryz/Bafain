@@ -2,7 +2,6 @@ from fastapi import APIRouter, Depends, Header
 
 from controllers.cart_controller import (
   add_cart_item,
-  checkout_summary,
   delete_cart_item,
   extract_access_token,
   get_cart,
@@ -15,15 +14,12 @@ from models.cart import (
   CartItemResponse,
   CartItemUpdateRequest,
   CartResponse,
-  CheckoutSummaryRequest,
-  CheckoutSummaryResponse,
 )
 
-cart_router = APIRouter(prefix="/api/v1/cart")
-checkout_router = APIRouter(prefix="/api/v1/checkout")
+router = APIRouter(prefix="/api/v1/cart")
 
 
-@cart_router.get("", response_model=CartResponse)
+@router.get("", response_model=CartResponse)
 def get_cart_route(
   authorization: str | None = Header(default=None),
   supabase=Depends(get_supabase_client),
@@ -32,7 +28,7 @@ def get_cart_route(
   return get_cart(access_token, supabase)
 
 
-@cart_router.post("/items", response_model=CartItemResponse, status_code=201)
+@router.post("/items", response_model=CartItemResponse, status_code=201)
 def add_cart_item_route(
   payload: CartItemCreateRequest,
   authorization: str | None = Header(default=None),
@@ -42,7 +38,7 @@ def add_cart_item_route(
   return add_cart_item(access_token, payload, supabase)
 
 
-@cart_router.patch("/items/{item_id}", response_model=CartItemResponse)
+@router.patch("/items/{item_id}", response_model=CartItemResponse)
 def update_cart_item_route(
   item_id: str,
   payload: CartItemUpdateRequest,
@@ -53,7 +49,7 @@ def update_cart_item_route(
   return update_cart_item(access_token, item_id, payload, supabase)
 
 
-@cart_router.delete("/items/{item_id}", response_model=CartItemDeleteResponse)
+@router.delete("/items/{item_id}", response_model=CartItemDeleteResponse)
 def delete_cart_item_route(
   item_id: str,
   authorization: str | None = Header(default=None),
@@ -61,13 +57,3 @@ def delete_cart_item_route(
 ):
   access_token = extract_access_token(authorization)
   return delete_cart_item(access_token, item_id, supabase)
-
-
-@checkout_router.post("/summary", response_model=CheckoutSummaryResponse)
-def checkout_summary_route(
-  payload: CheckoutSummaryRequest,
-  authorization: str | None = Header(default=None),
-  supabase=Depends(get_supabase_client),
-):
-  access_token = extract_access_token(authorization)
-  return checkout_summary(access_token, payload, supabase)

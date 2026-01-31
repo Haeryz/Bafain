@@ -11,8 +11,6 @@ from models.cart import (
   CartItemResponse,
   CartItemUpdateRequest,
   CartResponse,
-  CheckoutSummaryRequest,
-  CheckoutSummaryResponse,
 )
 
 logger = logging.getLogger("bafain.cart")
@@ -87,14 +85,3 @@ def delete_cart_item(
   _get_user(access_token, supabase)
   return {"message": "Cart item deleted", "item_id": item_id, "deleted": True}
 
-
-def checkout_summary(
-  access_token: str, payload: CheckoutSummaryRequest, supabase: Client
-) -> CheckoutSummaryResponse:
-  _get_user(access_token, supabase)
-  return {
-    "subtotal": 0,
-    "shipping_fee": 0,
-    "total": 0,
-    "currency": "IDR",
-  }
