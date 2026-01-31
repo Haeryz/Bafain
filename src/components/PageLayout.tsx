@@ -12,6 +12,7 @@ export function PageLayout({ children }: PageLayoutProps) {
   const [loginMode, setLoginMode] = useState<
     "login" | "register" | "forgot"
   >("login")
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
 
   useEffect(() => {
     if (loginOpen) {
@@ -26,10 +27,12 @@ export function PageLayout({ children }: PageLayoutProps) {
   return (
     <div className="flex min-h-screen flex-col bg-white font-['Manrope'] text-slate-900">
       <AppHeader
+        isLoggedIn={isLoggedIn}
         onLoginClick={() => {
           setLoginMode("login")
           setLoginOpen(true)
         }}
+        onLogout={() => setIsLoggedIn(false)}
       />
       <main className="flex-1">{children}</main>
       <AppFooter />
@@ -38,6 +41,7 @@ export function PageLayout({ children }: PageLayoutProps) {
         mode={loginMode}
         onClose={() => setLoginOpen(false)}
         onSwitchMode={(mode) => setLoginMode(mode)}
+        onLoginSuccess={() => setIsLoggedIn(true)}
       />
     </div>
   )
