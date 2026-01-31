@@ -2,6 +2,7 @@ import { useEffect } from "react"
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom"
 import Beranda from "@/pages/Beranda"
 import Pemesanan from "@/pages/Pemesanan"
+import Pembayaran from "@/pages/Pembayaran"
 import Produk from "@/pages/Produk"
 import Start from "@/pages/Start"
 import TentangKami from "@/pages/TentangKami"
@@ -28,6 +29,7 @@ export function App() {
         <Route path="/teknologi" element={<Teknologi />} />
         <Route path="/produk" element={<Produk />} />
         <Route path="/pemesanan" element={<Pemesanan />} />
+        <Route path="/pembayaran" element={<Pembayaran />} />
         <Route path="/tentang-kami" element={<TentangKami />} />
       </Routes>
     </BrowserRouter>
