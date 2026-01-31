@@ -25,11 +25,16 @@ const shippingOptions = [
 const paymentMethods = [
   { id: "bca", label: "BCA Virtual Account" },
   { id: "mandiri", label: "Mandiri Virtual Account" },
+  { id: "bri", label: "BRI Virtual Account" },
+  { id: "bni", label: "BNI Virtual Account" },
+  { id: "jatim", label: "Jatim Virtual Account" },
+  { id: "bsi", label: "BSI Virtual Account" },
 ]
 
 export function Pemesanan() {
   const [selectedShipping, setSelectedShipping] = useState("standar")
   const [selectedPayment, setSelectedPayment] = useState("bca")
+  const [showAllPayments, setShowAllPayments] = useState(false)
 
   return (
     <PageLayout>
@@ -142,7 +147,7 @@ export function Pemesanan() {
                       key={option.id}
                       type="button"
                       onClick={() => setSelectedShipping(option.id)}
-                      className={`flex w-full items-center justify-between rounded-xl border px-4 py-4 text-left transition ${
+                      className={`flex w-full cursor-pointer items-center justify-between rounded-xl border px-4 py-4 text-left transition ${
                         isActive
                           ? "border-blue-500 bg-blue-50/40"
                           : "border-slate-200 bg-white hover:border-slate-300"
@@ -185,20 +190,32 @@ export function Pemesanan() {
                 </h2>
                 <button
                   type="button"
-                  className="text-xs font-semibold text-blue-600"
+                  onClick={() => setShowAllPayments((prev) => !prev)}
+                  className="cursor-pointer text-xs font-semibold text-blue-600"
                 >
                   Lihat Semua
                 </button>
               </div>
               <div className="mt-6 space-y-4 text-sm text-slate-700">
-                {paymentMethods.map((method) => {
+                {(showAllPayments
+                  ? [
+                      ...paymentMethods,
+                      { id: "jateng", label: "Jateng Virtual Account" },
+                      { id: "jago", label: "Jago Virtual Account" },
+                      { id: "jago-syariah", label: "Jago Syariah Virtual Account" },
+                      { id: "seabank", label: "Seabank Virtual Account" },
+                      { id: "dana", label: "DANA" },
+                      { id: "bca-syariah", label: "BCA Syariah Virtual Account" },
+                    ]
+                  : paymentMethods
+                ).map((method) => {
                   const isActive = selectedPayment === method.id
                   return (
                     <button
                       key={method.id}
                       type="button"
                       onClick={() => setSelectedPayment(method.id)}
-                      className={`flex w-full items-center gap-3 rounded-xl border px-4 py-4 text-left transition ${
+                      className={`flex w-full cursor-pointer items-center gap-3 rounded-xl border px-4 py-4 text-left transition ${
                         isActive
                           ? "border-blue-500 bg-blue-50/40"
                           : "border-slate-200 bg-white hover:border-slate-300"
@@ -252,7 +269,7 @@ export function Pemesanan() {
                 <span className="text-orange-500">Rp 550.000</span>
               </div>
             </div>
-            <button className="mt-6 w-full rounded-full bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700">
+            <button className="mt-6 w-full cursor-pointer rounded-full bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700">
               Bayar Sekarang
             </button>
           </div>
