@@ -1,19 +1,10 @@
 import logging
 import os
-import uuid
 from typing import Any
 
 from fastapi import HTTPException, status
 from supabase import AuthSessionMissingError, Client
 
-from models.address import (
-  AddressCreateRequest,
-  AddressDefaultResponse,
-  AddressDeleteResponse,
-  AddressListResponse,
-  AddressResponse,
-  AddressUpdateRequest,
-)
 from models.profile import ProfileUpdateRequest
 
 logger = logging.getLogger("bafain.profile")
@@ -46,18 +37,6 @@ def _to_dict(value: Any) -> dict[str, Any] | None:
   if hasattr(value, "dict"):
     return value.dict()
   return None
-
-
-def _payload_to_dict(payload: Any) -> dict[str, Any]:
-  if payload is None:
-    return {}
-  if isinstance(payload, dict):
-    return payload
-  if hasattr(payload, "model_dump"):
-    return payload.model_dump(exclude_none=True)
-  if hasattr(payload, "dict"):
-    return payload.dict(exclude_none=True)
-  return {}
 
 
 def _get_user(access_token: str, supabase: Client):
@@ -277,53 +256,3 @@ def get_recent_orders(
     )
 
   return {"orders": getattr(response, "data", None) or []}
-
-
-def list_addresses(access_token: str, supabase: Client) -> AddressListResponse:
-  _get_user(access_token, supabase)
-  return {"addresses": []}
-
-
-def _build_address(
-  address_id: str, payload: Any, is_default: bool | None = None
-) -> dict[str, Any]:
-  data = _payload_to_dict(payload)
-  data["id"] = address_id
-  if is_default is not None:
-    data["is_default"] = is_default
-  elif "is_default" not in data:
-    data["is_default"] = False
-  return data
-
-
-def create_address(
-  access_token: str, payload: AddressCreateRequest, supabase: Client
-) -> AddressResponse:
-  _get_user(access_token, supabase)
-  address_id = uuid.uuid4().hex
-  return {"address": _build_address(address_id, payload)}
-
-
-def update_address(
-  access_token: str,
-  address_id: str,
-  payload: AddressUpdateRequest,
-  supabase: Client,
-) -> AddressResponse:
-  _get_user(access_token, supabase)
-  return {"address": _build_address(address_id, payload)}
-
-
-def delete_address(
-  access_token: str, address_id: str, supabase: Client
-) -> AddressDeleteResponse:
-  _get_user(access_token, supabase)
-  return {"message": "Address deleted", "address_id": address_id, "deleted": True}
-
-
-def set_default_address(
-  access_token: str, address_id: str, supabase: Client
-) -> AddressDefaultResponse:
-  _get_user(access_token, supabase)
-  address = _build_address(address_id, {}, is_default=True)
-  return {"address": address, "message": "Default address updated"}
