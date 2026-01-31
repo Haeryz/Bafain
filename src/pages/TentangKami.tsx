@@ -75,7 +75,7 @@ export function TentangKami() {
         </div>
 
         <div className="mt-12 grid gap-10 md:grid-cols-[1fr_1.1fr]">
-          <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+          <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-md">
             <img
               src="/hero-team.svg"
               alt="Tim Bafain"
@@ -115,7 +115,7 @@ export function TentangKami() {
             Visi & Misi
           </h2>
           <div className="mt-10 grid gap-6 md:grid-cols-2">
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md">
               <div className="flex items-center gap-3">
                 <span className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-50 text-blue-600">
                   <Target className="h-5 w-5" />
@@ -131,7 +131,7 @@ export function TentangKami() {
                 lingkungan.
               </p>
             </div>
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md">
               <div className="flex items-center gap-3">
                 <span className="flex h-10 w-10 items-center justify-center rounded-full bg-orange-50 text-orange-500">
                   <Lightbulb className="h-5 w-5" />
@@ -187,7 +187,7 @@ export function TentangKami() {
                       </span>
                     </div>
                     <div
-                      className={`order-2 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm md:order-none md:row-start-1 md:max-w-md ${
+                      className={`order-2 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md md:order-none md:row-start-1 md:max-w-md ${
                         isRight
                           ? "md:col-start-3 md:justify-self-start md:text-left"
                           : "md:col-start-1 md:justify-self-end md:text-right"

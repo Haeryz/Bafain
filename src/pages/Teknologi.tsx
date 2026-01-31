@@ -67,7 +67,7 @@ export function Teknologi() {
         </div>
 
         <div className="mt-10 flex justify-center">
-          <div className="w-full max-w-3xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+          <div className="w-full max-w-3xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-md">
             <img
               src="/hero-team.svg"
               alt="Teknisi melakukan pengujian teknologi pengering surya"
@@ -90,7 +90,7 @@ export function Teknologi() {
               const Icon = item.icon
               return (
                 <div key={item.title} className="contents">
-                  <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                  <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md">
                     <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-50 text-xs font-semibold text-blue-600">
                       {index + 1}
                     </div>
@@ -145,7 +145,7 @@ export function Teknologi() {
                     </p>
                   </div>
                   <div className="flex justify-center">
-                    <div className="w-full max-w-xs rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                    <div className="w-full max-w-xs rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md">
                       <img
                         src={step.image}
                         alt={step.title}
