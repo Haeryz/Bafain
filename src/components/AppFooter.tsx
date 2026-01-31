@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom"
-import { Mail, MapPin, Phone } from "lucide-react"
+import { Facebook, Instagram, Linkedin, Mail, MapPin, Phone, Youtube } from "lucide-react"
 
 export function AppFooter() {
   return (
@@ -15,13 +15,22 @@ export function AppFooter() {
               Jawa Timur 65175
             </p>
             <div className="mt-5 flex items-center gap-3 text-slate-500">
-              {["IG", "FB", "IN", "YT"].map((label) => (
-                <span
-                  key={label}
-                  className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-xs font-semibold"
+              {[
+                { label: "Instagram", href: "https://www.instagram.com/", icon: Instagram },
+                { label: "Facebook", href: "https://www.facebook.com/", icon: Facebook },
+                { label: "LinkedIn", href: "https://www.linkedin.com/", icon: Linkedin },
+                { label: "YouTube", href: "https://www.youtube.com/", icon: Youtube },
+              ].map((item) => (
+                <a
+                  key={item.label}
+                  href={item.href}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label={item.label}
+                  className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition hover:border-slate-300 hover:text-slate-700"
                 >
-                  {label}
-                </span>
+                  <item.icon className="h-4 w-4" />
+                </a>
               ))}
             </div>
           </div>
