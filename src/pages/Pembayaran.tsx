@@ -26,18 +26,24 @@ export function Pembayaran() {
     window.localStorage.getItem("bafain:paymentMethod") || "bca"
   const selectedPaymentLabel =
     window.localStorage.getItem("bafain:paymentLabel") || "BCA Virtual Account"
+  const orderTotal = Number(
+    window.localStorage.getItem("bafain:orderTotal") || "550000"
+  )
+
+  const formatRupiah = (value: number) =>
+    new Intl.NumberFormat("id-ID").format(value)
 
   const paymentCodeMap: Record<string, string> = {
     bca: "BCA",
     mandiri: "Mandiri",
     bri: "BRI",
     bni: "BNI",
-    jatim: "Jatim",
+    jatim: "JATIM",
     bsi: "BSI",
-    jateng: "Jateng",
-    jago: "Jago",
-    "jago-syariah": "Jago Syariah",
-    seabank: "Seabank",
+    jateng: "JATENG",
+    jago: "JAGO",
+    "jago-syariah": "JAGO SYARIAH",
+    seabank: "SEABANK",
     dana: "DANA",
     "bca-syariah": "BCA Syariah",
   }
@@ -59,6 +65,23 @@ export function Pembayaran() {
 
   const paymentCode = paymentCodeMap[selectedPaymentId] || "BCA"
   const vaNumber = vaNumberMap[selectedPaymentId] || "6 8001 08214456789"
+  const dueDateText = (() => {
+    const now = new Date()
+    const due = new Date(now.getTime() + 5 * 60 * 60 * 1000)
+    const datePart = due.toLocaleDateString("id-ID", {
+      weekday: "short",
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    })
+    const timePart = due.toLocaleTimeString("id-ID", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    })
+    const timeWithDot = timePart.replace(":", ".")
+    return `${datePart}, ${timeWithDot} WIB`
+  })()
 
   useEffect(() => {
     if (!showCopied) return
@@ -130,7 +153,7 @@ export function Pembayaran() {
               <span className="rounded-full bg-slate-100 px-4 py-2 text-xs text-slate-600">
                 Selesaikan Sebelum
                 <span className="mt-1 block text-sm font-semibold text-slate-900">
-                  Sab,29 Nov 2025, 05.00 WIB
+                  {dueDateText}
                 </span>
               </span>
             </div>
@@ -166,7 +189,7 @@ export function Pembayaran() {
                   Total Pembayaran
                 </p>
                 <div className="mt-2 rounded-xl bg-blue-50 px-4 py-3 text-sm font-semibold text-slate-900">
-                  IDR 550.000
+                  IDR {formatRupiah(orderTotal)}
                 </div>
               </div>
 
@@ -256,7 +279,7 @@ export function Pembayaran() {
               <div className="flex items-center justify-between text-sm text-slate-700">
                 <span>Total Pembayaran</span>
                 <span className="text-base font-semibold text-orange-500">
-                  Rp 550.000
+                  Rp {formatRupiah(orderTotal)}
                 </span>
               </div>
             </div>

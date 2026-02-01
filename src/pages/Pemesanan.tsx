@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import PageLayout from "@/components/PageLayout"
 import { Link } from "react-router-dom"
 
@@ -7,19 +7,19 @@ const shippingOptions = [
     id: "standar",
     title: "Pengiriman Standar",
     detail: "3 - 5 hari kerja",
-    price: "Rp 50.000",
+    price: 50000,
   },
   {
     id: "ekspres",
     title: "Pengiriman Ekspres",
     detail: "1 - 2 hari kerja",
-    price: "Rp 150.000",
+    price: 150000,
   },
   {
     id: "premium",
     title: "Pengiriman Premium",
     detail: "Pengiriman hari berikutnya",
-    price: "Rp 150.000",
+    price: 150000,
   },
 ]
 
@@ -28,7 +28,7 @@ const paymentMethods = [
   { id: "mandiri", label: "Mandiri Virtual Account" },
   { id: "bri", label: "BRI Virtual Account" },
   { id: "bni", label: "BNI Virtual Account" },
-  { id: "jatim", label: "Jatim Virtual Account" },
+  { id: "jatim", label: "JATIM Virtual Account" },
   { id: "bsi", label: "BSI Virtual Account" },
 ]
 
@@ -39,10 +39,45 @@ export function Pemesanan() {
   )
   const [showAllPayments, setShowAllPayments] = useState(false)
 
+  const selectedShippingOption =
+    shippingOptions.find((option) => option.id === selectedShipping) ||
+    shippingOptions[0]
+  const subtotal = 500000
+  const total = subtotal + selectedShippingOption.price
+
+  const formatRupiah = (value: number) =>
+    new Intl.NumberFormat("id-ID").format(value)
+
   const handlePaymentChange = (methodId: string, methodLabel: string) => {
     setSelectedPayment(methodId)
     window.localStorage.setItem("bafain:paymentMethod", methodId)
     window.localStorage.setItem("bafain:paymentLabel", methodLabel)
+  }
+
+  useEffect(() => {
+    window.localStorage.setItem(
+      "bafain:shippingPrice",
+      selectedShippingOption.price.toString()
+    )
+    window.localStorage.setItem(
+      "bafain:shippingLabel",
+      selectedShippingOption.title
+    )
+    window.localStorage.setItem("bafain:orderSubtotal", subtotal.toString())
+    window.localStorage.setItem("bafain:orderTotal", total.toString())
+  }, [selectedShippingOption, subtotal, total])
+
+  const handleShippingChange = (optionId: string) => {
+    setSelectedShipping(optionId)
+    const option =
+      shippingOptions.find((item) => item.id === optionId) || shippingOptions[0]
+    window.localStorage.setItem("bafain:shippingPrice", option.price.toString())
+    window.localStorage.setItem("bafain:shippingLabel", option.title)
+    window.localStorage.setItem("bafain:orderSubtotal", subtotal.toString())
+    window.localStorage.setItem(
+      "bafain:orderTotal",
+      (subtotal + option.price).toString()
+    )
   }
 
   return (
@@ -164,7 +199,7 @@ export function Pemesanan() {
                     <button
                       key={option.id}
                       type="button"
-                      onClick={() => setSelectedShipping(option.id)}
+                      onClick={() => handleShippingChange(option.id)}
                       className={`flex w-full cursor-pointer items-center justify-between rounded-xl border px-4 py-4 text-left transition ${
                         isActive
                           ? "border-blue-500 bg-blue-50/40"
@@ -193,7 +228,7 @@ export function Pemesanan() {
                         </div>
                       </div>
                       <p className="text-sm font-semibold text-slate-900">
-                        {option.price}
+                        Rp {formatRupiah(option.price)}
                       </p>
                     </button>
                   )
@@ -218,10 +253,10 @@ export function Pemesanan() {
                 {(showAllPayments
                   ? [
                       ...paymentMethods,
-                      { id: "jateng", label: "Jateng Virtual Account" },
-                      { id: "jago", label: "Jago Virtual Account" },
-                      { id: "jago-syariah", label: "Jago Syariah Virtual Account" },
-                      { id: "seabank", label: "Seabank Virtual Account" },
+                      { id: "jateng", label: "JATENG Virtual Account" },
+                      { id: "jago", label: "JAGO Virtual Account" },
+                      { id: "jago-syariah", label: "JAGO SYARIAH Virtual Account" },
+                      { id: "seabank", label: "SEABANK Virtual Account" },
                       { id: "dana", label: "DANA" },
                       { id: "bca-syariah", label: "BCA Syariah Virtual Account" },
                     ]
@@ -272,19 +307,27 @@ export function Pemesanan() {
             <div className="mt-4 space-y-3 text-sm text-slate-600">
               <div className="flex items-center justify-between">
                 <span>Solar Dryer</span>
-                <span className="font-semibold text-slate-900">Rp 500.000</span>
+                <span className="font-semibold text-slate-900">
+                  Rp {formatRupiah(subtotal)}
+                </span>
               </div>
               <div className="flex items-center justify-between">
                 <span>Subtotal</span>
-                <span className="font-semibold text-slate-900">Rp 500.000</span>
+                <span className="font-semibold text-slate-900">
+                  Rp {formatRupiah(subtotal)}
+                </span>
               </div>
               <div className="flex items-center justify-between border-b border-slate-200 pb-3">
                 <span>Pengiriman</span>
-                <span className="font-semibold text-slate-900">Rp 50.000</span>
+                <span className="font-semibold text-slate-900">
+                  Rp {formatRupiah(selectedShippingOption.price)}
+                </span>
               </div>
               <div className="flex items-center justify-between pt-2 text-base font-semibold text-slate-900">
                 <span>Total</span>
-                <span className="text-orange-500">Rp 550.000</span>
+                <span className="text-orange-500">
+                  Rp {formatRupiah(total)}
+                </span>
               </div>
             </div>
             <Link
