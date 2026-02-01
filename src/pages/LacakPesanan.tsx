@@ -1,4 +1,5 @@
 import {
+  ArrowLeft,
   Calendar,
   ClipboardList,
   MapPin,
@@ -8,6 +9,7 @@ import {
 } from "lucide-react"
 import { useMemo, useState } from "react"
 import PageLayout from "@/components/PageLayout"
+import { Link } from "react-router-dom"
 
 const orders = [
   {
@@ -96,7 +98,14 @@ export function LacakPesanan() {
     <PageLayout>
       <section className="mx-auto w-full max-w-6xl px-6 pb-20 pt-12 md:pt-16">
         <div>
-          <p className="text-sm font-semibold text-slate-400">
+          <Link
+            to="/profile"
+            className="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 transition hover:text-blue-600"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Kembali ke Profil
+          </Link>
+          <p className="mt-3 text-sm font-semibold text-slate-400">
             <a
               href="/profile"
               className="cursor-pointer text-slate-500 transition hover:text-blue-600"
