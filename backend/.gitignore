@@ -2,6 +2,7 @@
 __pycache__/
 *.py[cod]
 *$py.class
+bafain-64fac-firebase-adminsdk-fbsvc-bf9b0885c3.json
 
 # C extensions
 *.so

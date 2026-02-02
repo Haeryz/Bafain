@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter
 
 from controllers.auth_controller import (
   forgot_password,
@@ -6,7 +6,6 @@ from controllers.auth_controller import (
   register_user,
   reset_password,
 )
-from lib.supabase_client import get_supabase_client
 from models.auth import (
   AuthForgotPasswordRequest,
   AuthLoginRequest,
@@ -21,26 +20,20 @@ router = APIRouter()
 
 
 @router.post("/register", response_model=AuthRegisterResponse)
-def register(
-  payload: AuthRegisterRequest, supabase=Depends(get_supabase_client)
-):
-  return register_user(payload, supabase)
+def register(payload: AuthRegisterRequest):
+  return register_user(payload)
 
 
 @router.post("/login", response_model=AuthSessionResponse)
-def login(payload: AuthLoginRequest, supabase=Depends(get_supabase_client)):
-  return login_user(payload, supabase)
+def login(payload: AuthLoginRequest):
+  return login_user(payload)
 
 
 @router.post("/forgot-password", response_model=MessageResponse)
-def forgot_password_route(
-  payload: AuthForgotPasswordRequest, supabase=Depends(get_supabase_client)
-):
-  return forgot_password(payload, supabase)
+def forgot_password_route(payload: AuthForgotPasswordRequest):
+  return forgot_password(payload)
 
 
 @router.post("/reset-password", response_model=MessageResponse)
-def reset_password_route(
-  payload: AuthResetPasswordRequest, supabase=Depends(get_supabase_client)
-):
-  return reset_password(payload, supabase)
+def reset_password_route(payload: AuthResetPasswordRequest):
+  return reset_password(payload)

@@ -2,6 +2,7 @@ import os
 
 from dotenv import load_dotenv
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 import redis
 
 from lib.supabase_client import get_supabase_client
@@ -21,6 +22,27 @@ from routes.uploads import router as uploads_router
 load_dotenv()
 
 app = FastAPI(title="Bafain API")
+
+raw_origins = os.getenv("CORS_ALLOW_ORIGINS")
+if raw_origins:
+  allowed_origins = [
+    origin.strip() for origin in raw_origins.split(",") if origin.strip()
+  ]
+else:
+  allowed_origins = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:4173",
+    "http://127.0.0.1:4173",
+  ]
+
+app.add_middleware(
+  CORSMiddleware,
+  allow_origins=allowed_origins,
+  allow_credentials=True,
+  allow_methods=["*"],
+  allow_headers=["*"],
+)
 
 
 def get_redis_client() -> redis.Redis:

@@ -1,4 +1,6 @@
+import { type FormEvent } from "react"
 import { X } from "lucide-react"
+import { useAuthStore } from "@/stores/auth/useAuthStore"
 
 type LoginModalProps = {
   open: boolean
@@ -19,6 +21,47 @@ export function LoginModal({
 
   const isRegister = mode === "register"
   const isForgot = mode === "forgot"
+  const {
+    loginForm,
+    registerForm,
+    forgotForm,
+    submitting,
+    feedback,
+    updateLoginForm,
+    updateRegisterForm,
+    updateForgotForm,
+    passwordVisibility,
+    togglePasswordVisibility,
+    login,
+    register,
+    forgot,
+  } = useAuthStore()
+
+  const activeFeedback = isRegister
+    ? feedback.register
+    : isForgot
+    ? feedback.forgot
+    : feedback.login
+
+  const isSubmitting = isRegister
+    ? submitting.register
+    : isForgot
+    ? submitting.forgot
+    : submitting.login
+
+  const handleSubmit = async (event: FormEvent) => {
+    event.preventDefault()
+    const success = isRegister
+      ? await register()
+      : isForgot
+      ? await forgot()
+      : await login()
+
+    if (success && !isForgot) {
+      onLoginSuccess?.()
+      onClose()
+    }
+  }
 
   return (
     <div
@@ -58,7 +101,21 @@ export function LoginModal({
           </button>
         </div>
 
-        <form className="mt-6 space-y-4 text-sm text-slate-600">
+        <form
+          className="mt-6 space-y-4 text-sm text-slate-600"
+          onSubmit={handleSubmit}
+        >
+          {activeFeedback && (
+            <div
+              className={`rounded-xl border px-4 py-3 text-xs font-semibold ${
+                activeFeedback.type === "success"
+                  ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                  : "border-rose-200 bg-rose-50 text-rose-700"
+              }`}
+            >
+              {activeFeedback.message}
+            </div>
+          )}
           {isRegister && (
             <div>
               <label className="text-xs font-semibold text-slate-600">
@@ -67,6 +124,10 @@ export function LoginModal({
               <input
                 type="text"
                 placeholder="Enter your name"
+                value={registerForm.name}
+                onChange={(event) =>
+                  updateRegisterForm({ name: event.target.value })
+                }
                 className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-blue-500"
               />
             </div>
@@ -76,6 +137,24 @@ export function LoginModal({
             <input
               type="email"
               placeholder="example@gmail.com"
+              value={
+                isRegister
+                  ? registerForm.email
+                  : isForgot
+                  ? forgotForm.email
+                  : loginForm.email
+              }
+              onChange={(event) => {
+                if (isRegister) {
+                  updateRegisterForm({ email: event.target.value })
+                  return
+                }
+                if (isForgot) {
+                  updateForgotForm({ email: event.target.value })
+                  return
+                }
+                updateLoginForm({ email: event.target.value })
+              }}
               className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-blue-500"
             />
           </div>
@@ -87,6 +166,10 @@ export function LoginModal({
               <input
                 type="tel"
                 placeholder="081234567890"
+                value={registerForm.phone}
+                onChange={(event) =>
+                  updateRegisterForm({ phone: event.target.value })
+                }
                 className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-blue-500"
               />
             </div>
@@ -107,11 +190,44 @@ export function LoginModal({
                   </button>
                 )}
               </div>
-              <input
-                type="password"
-                placeholder="Enter your password"
-                className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-blue-500"
-              />
+              <div className="relative mt-2">
+                <input
+                  type={
+                    isRegister
+                      ? passwordVisibility.register
+                        ? "text"
+                        : "password"
+                      : passwordVisibility.login
+                      ? "text"
+                      : "password"
+                  }
+                  placeholder="Enter your password"
+                  value={
+                    isRegister ? registerForm.password : loginForm.password
+                  }
+                  onChange={(event) => {
+                    if (isRegister) {
+                      updateRegisterForm({ password: event.target.value })
+                      return
+                    }
+                    updateLoginForm({ password: event.target.value })
+                  }}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 pr-16 text-sm text-slate-900 outline-none focus:border-blue-500"
+                />
+                <button
+                  type="button"
+                  onClick={() =>
+                    togglePasswordVisibility(isRegister ? "register" : "login")
+                  }
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-500 transition hover:text-slate-700"
+                >
+                  {(isRegister
+                    ? passwordVisibility.register
+                    : passwordVisibility.login)
+                    ? "Hide"
+                    : "Show"}
+                </button>
+              </div>
             </div>
           )}
           {isRegister && (
@@ -119,25 +235,40 @@ export function LoginModal({
               <label className="text-xs font-semibold text-slate-600">
                 Confirm Password
               </label>
-              <input
-                type="password"
-                placeholder="Confirm your password"
-                className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-blue-500"
-              />
+              <div className="relative mt-2">
+                <input
+                  type={passwordVisibility.confirm ? "text" : "password"}
+                  placeholder="Confirm your password"
+                  value={registerForm.confirmPassword}
+                  onChange={(event) =>
+                    updateRegisterForm({
+                      confirmPassword: event.target.value,
+                    })
+                  }
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 pr-16 text-sm text-slate-900 outline-none focus:border-blue-500"
+                />
+                <button
+                  type="button"
+                  onClick={() => togglePasswordVisibility("confirm")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-500 transition hover:text-slate-700"
+                >
+                  {passwordVisibility.confirm ? "Hide" : "Show"}
+                </button>
+              </div>
             </div>
           )}
           <button
-            type="button"
-            onClick={() => {
-              if (!isRegister && !isForgot) {
-                onLoginSuccess?.()
-                onClose()
-                return
-              }
-            }}
-            className="w-full cursor-pointer rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
+            type="submit"
+            disabled={isSubmitting}
+            className="w-full cursor-pointer rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-70"
           >
-            {isRegister ? "Sign Up now" : isForgot ? "Send Reset Link" : "Login now"}
+            {isSubmitting
+              ? "Processing..."
+              : isRegister
+              ? "Sign Up now"
+              : isForgot
+              ? "Send Reset Link"
+              : "Login now"}
           </button>
         </form>
 

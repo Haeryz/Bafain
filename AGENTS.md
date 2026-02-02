@@ -10,6 +10,7 @@
   - `src/index.css` contains Tailwind directives (avoid adding custom CSS rules).
 - `public/` is for static files served as-is (e.g., icons).
 - Config lives at the repo root: `vite.config.ts`, `tsconfig*.json`, `eslint.config.js`, `components.json`.
+- WHEN WIRING UP API ENDPOINT ALWAYS READ THE BACKEND FOLDER DO  NOT WRITE API BASED ON ASSUMTION
 
 ## Build, Test, and Development Commands
 Run these from the repo root:

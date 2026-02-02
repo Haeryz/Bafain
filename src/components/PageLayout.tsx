@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom"
 import AppFooter from "./AppFooter"
 import AppHeader from "./AppHeader"
 import LoginModal from "./LoginModal"
+import { useAuthStore } from "@/stores/auth/useAuthStore"
 
 type PageLayoutProps = {
   children: ReactNode
@@ -13,9 +14,8 @@ export function PageLayout({ children }: PageLayoutProps) {
   const [loginMode, setLoginMode] = useState<
     "login" | "register" | "forgot"
   >("login")
-  const [isLoggedIn, setIsLoggedIn] = useState(
-    () => window.localStorage.getItem("bafain:isLoggedIn") === "true"
-  )
+  const isLoggedIn = useAuthStore((state) => state.isLoggedIn)
+  const logout = useAuthStore((state) => state.logout)
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -87,10 +87,7 @@ export function PageLayout({ children }: PageLayoutProps) {
           setLoginMode("login")
           setLoginOpen(true)
         }}
-        onLogout={() => {
-          setIsLoggedIn(false)
-          window.localStorage.removeItem("bafain:isLoggedIn")
-        }}
+        onLogout={logout}
       />
       <main className="flex-1">{children}</main>
       <AppFooter />
@@ -100,8 +97,6 @@ export function PageLayout({ children }: PageLayoutProps) {
         onClose={() => setLoginOpen(false)}
         onSwitchMode={(mode) => setLoginMode(mode)}
         onLoginSuccess={() => {
-          setIsLoggedIn(true)
-          window.localStorage.setItem("bafain:isLoggedIn", "true")
           navigate("/beranda")
         }}
       />

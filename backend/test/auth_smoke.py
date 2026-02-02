@@ -45,6 +45,13 @@ def _resolve_base_email() -> str | None:
   domain = os.getenv("TEST_EMAIL_DOMAIN")
   if domain:
     return f"test@{domain}"
+  allow_fake = os.getenv("ALLOW_FAKE_EMAIL_DOMAIN", "true").lower() in (
+    "1",
+    "true",
+    "yes",
+  )
+  if allow_fake:
+    return "test@example.com"
   return None
 
 
@@ -52,7 +59,7 @@ def _unique_email(prefix: str) -> str:
   base_email = _resolve_base_email()
   if not base_email:
     raise RuntimeError(
-      "Set BASE_EMAIL or TEST_EMAIL_DOMAIN to a real email/domain (example.com is rejected by Supabase)."
+      "Set BASE_EMAIL or TEST_EMAIL_DOMAIN, or enable ALLOW_FAKE_EMAIL_DOMAIN to use example.com."
     )
   local, _, domain = base_email.partition("@")
   suffix = f"{int(time.time())}-{os.getpid()}"

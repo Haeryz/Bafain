@@ -1,4 +1,5 @@
-import { useState } from "react"
+import { type FormEvent } from "react"
+import { Link } from "react-router-dom"
 import {
   ArrowRight,
   Leaf,
@@ -7,6 +8,7 @@ import {
   Sparkles,
 } from "lucide-react"
 import PageLayout from "@/components/PageLayout"
+import { useAuthStore } from "@/stores/auth/useAuthStore"
 
 const benefitCards = [
   {
@@ -39,10 +41,60 @@ const authTabs = [
   { key: "masuk", label: "Masuk" },
   { key: "daftar", label: "Daftar" },
   { key: "lupa", label: "Lupa Password" },
-]
+  { key: "reset", label: "Reset Password" },
+] as const
 
 export function Start() {
-  const [activeTab, setActiveTab] = useState("masuk")
+  const {
+    activeTab,
+    setActiveTab,
+    isLoggedIn,
+    user,
+    loginForm,
+    registerForm,
+    forgotForm,
+    resetForm,
+    submitting,
+    feedback,
+    updateLoginForm,
+    updateRegisterForm,
+    updateForgotForm,
+    updateResetForm,
+    passwordVisibility,
+    togglePasswordVisibility,
+    login,
+    register,
+    forgot,
+    reset,
+    logout,
+  } = useAuthStore()
+
+  const displayName =
+    user && typeof user.display_name === "string"
+      ? user.display_name.trim()
+      : ""
+  const displayEmail =
+    user && typeof user.email === "string" ? user.email : ""
+
+  const handleLoginSubmit = async (event: FormEvent) => {
+    event.preventDefault()
+    await login()
+  }
+
+  const handleRegisterSubmit = async (event: FormEvent) => {
+    event.preventDefault()
+    await register()
+  }
+
+  const handleForgotSubmit = async (event: FormEvent) => {
+    event.preventDefault()
+    await forgot()
+  }
+
+  const handleResetSubmit = async (event: FormEvent) => {
+    event.preventDefault()
+    await reset()
+  }
 
   return (
     <PageLayout>
@@ -164,32 +216,101 @@ export function Start() {
               </div>
 
               <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6 shadow-sm">
-                <div className="flex flex-wrap gap-2">
-                {authTabs.map((tab) => (
-                  <button
-                    key={tab.key}
-                    type="button"
-                    onClick={() => setActiveTab(tab.key)}
-                    className={`cursor-pointer rounded-full px-4 py-2 text-xs font-semibold transition ${
-                      activeTab === tab.key
-                        ? "bg-blue-600 text-white"
-                        : "bg-white text-slate-600 hover:text-slate-900"
-                    }`}
-                  >
-                      {tab.label}
+                {isLoggedIn ? (
+                  <div className="space-y-5 text-sm text-slate-600">
+                    <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+                          <ShieldCheck className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-emerald-900">
+                            Akun Anda sudah aktif
+                          </p>
+                          <p className="text-xs text-emerald-700">
+                            {displayName ||
+                              displayEmail ||
+                              "Sesi Anda tersimpan dengan aman."}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="space-y-2 text-xs text-slate-500">
+                      <p>
+                        Gunakan fitur pengelolaan produksi, pantau pesanan, dan
+                        akses laporan kapan pun diperlukan.
+                      </p>
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <Link
+                        to="/beranda"
+                        className="flex items-center justify-center rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
+                      >
+                        Masuk Beranda
+                      </Link>
+                      <Link
+                        to="/profile"
+                        className="flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:text-slate-900"
+                      >
+                        Lihat Profil
+                      </Link>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={logout}
+                      className="w-full rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs font-semibold text-rose-700 transition hover:border-rose-300 hover:text-rose-800"
+                    >
+                      Keluar dari Akun Ini
                     </button>
-                  ))}
-                </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex flex-wrap gap-2">
+                      {authTabs.map((tab) => (
+                        <button
+                          key={tab.key}
+                          type="button"
+                          onClick={() => setActiveTab(tab.key)}
+                          className={`cursor-pointer rounded-full px-4 py-2 text-xs font-semibold transition ${
+                            activeTab === tab.key
+                              ? "bg-blue-600 text-white"
+                              : "bg-white text-slate-600 hover:text-slate-900"
+                          }`}
+                        >
+                          {tab.label}
+                        </button>
+                      ))}
+                    </div>
 
-                {activeTab === "masuk" && (
-                  <form className="mt-6 space-y-4 text-sm text-slate-600">
+                    {activeTab === "masuk" && (
+                  <form
+                    onSubmit={handleLoginSubmit}
+                    className="mt-6 space-y-4 text-sm text-slate-600"
+                  >
+                    {feedback.login && (
+                      <div
+                        className={`rounded-xl border px-4 py-3 text-xs font-semibold ${
+                          feedback.login.type === "success"
+                            ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                            : "border-rose-200 bg-rose-50 text-rose-700"
+                        }`}
+                      >
+                        {feedback.login.message}
+                      </div>
+                    )}
                     <div>
                       <label className="text-xs font-semibold text-slate-600">
                         Email
                       </label>
                       <input
                         type="email"
+                        required
+                        autoComplete="email"
                         placeholder="nama@email.com"
+                        value={loginForm.email}
+                        onChange={(event) =>
+                          updateLoginForm({ email: event.target.value })
+                        }
                         className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-blue-500"
                       />
                     </div>
@@ -197,30 +318,65 @@ export function Start() {
                       <label className="text-xs font-semibold text-slate-600">
                         Password
                       </label>
-                      <input
-                        type="password"
-                        placeholder="Masukkan password"
-                        className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-blue-500"
-                      />
+                      <div className="relative mt-2">
+                        <input
+                          type={passwordVisibility.login ? "text" : "password"}
+                          required
+                          autoComplete="current-password"
+                          placeholder="Masukkan password"
+                          value={loginForm.password}
+                          onChange={(event) =>
+                            updateLoginForm({ password: event.target.value })
+                          }
+                          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 pr-16 text-sm text-slate-900 outline-none focus:border-blue-500"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => togglePasswordVisibility("login")}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-500 transition hover:text-slate-700"
+                        >
+                          {passwordVisibility.login ? "Hide" : "Show"}
+                        </button>
+                      </div>
                     </div>
                     <button
                       type="submit"
-                      className="w-full cursor-pointer rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
+                      disabled={submitting.login}
+                      className="w-full cursor-pointer rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-70"
                     >
-                      Masuk
+                      {submitting.login ? "Memproses..." : "Masuk"}
                     </button>
                   </form>
                 )}
 
                 {activeTab === "daftar" && (
-                  <form className="mt-6 space-y-4 text-sm text-slate-600">
+                  <form
+                    onSubmit={handleRegisterSubmit}
+                    className="mt-6 space-y-4 text-sm text-slate-600"
+                  >
+                    {feedback.register && (
+                      <div
+                        className={`rounded-xl border px-4 py-3 text-xs font-semibold ${
+                          feedback.register.type === "success"
+                            ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                            : "border-rose-200 bg-rose-50 text-rose-700"
+                        }`}
+                      >
+                        {feedback.register.message}
+                      </div>
+                    )}
                     <div>
                       <label className="text-xs font-semibold text-slate-600">
-                        Nama Lengkap
+                        Nama Lengkap (opsional)
                       </label>
                       <input
                         type="text"
+                        autoComplete="name"
                         placeholder="PT Mitra Laut"
+                        value={registerForm.name}
+                        onChange={(event) =>
+                          updateRegisterForm({ name: event.target.value })
+                        }
                         className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-blue-500"
                       />
                     </div>
@@ -230,7 +386,13 @@ export function Start() {
                       </label>
                       <input
                         type="email"
+                        required
+                        autoComplete="email"
                         placeholder="nama@email.com"
+                        value={registerForm.email}
+                        onChange={(event) =>
+                          updateRegisterForm({ email: event.target.value })
+                        }
                         className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-blue-500"
                       />
                     </div>
@@ -238,40 +400,165 @@ export function Start() {
                       <label className="text-xs font-semibold text-slate-600">
                         Password
                       </label>
-                      <input
-                        type="password"
-                        placeholder="Buat password"
-                        className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-blue-500"
-                      />
+                      <div className="relative mt-2">
+                        <input
+                          type={passwordVisibility.register ? "text" : "password"}
+                          required
+                          autoComplete="new-password"
+                          placeholder="Buat password"
+                          value={registerForm.password}
+                          onChange={(event) =>
+                            updateRegisterForm({ password: event.target.value })
+                          }
+                          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 pr-16 text-sm text-slate-900 outline-none focus:border-blue-500"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => togglePasswordVisibility("register")}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-500 transition hover:text-slate-700"
+                        >
+                          {passwordVisibility.register ? "Hide" : "Show"}
+                        </button>
+                      </div>
                     </div>
                     <button
                       type="submit"
-                      className="w-full cursor-pointer rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
+                      disabled={submitting.register}
+                      className="w-full cursor-pointer rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-70"
                     >
-                      Daftar Akun
+                      {submitting.register ? "Memproses..." : "Daftar Akun"}
                     </button>
                   </form>
                 )}
 
                 {activeTab === "lupa" && (
-                  <form className="mt-6 space-y-4 text-sm text-slate-600">
+                  <form
+                    onSubmit={handleForgotSubmit}
+                    className="mt-6 space-y-4 text-sm text-slate-600"
+                  >
+                    {feedback.forgot && (
+                      <div
+                        className={`rounded-xl border px-4 py-3 text-xs font-semibold ${
+                          feedback.forgot.type === "success"
+                            ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                            : "border-rose-200 bg-rose-50 text-rose-700"
+                        }`}
+                      >
+                        {feedback.forgot.message}
+                      </div>
+                    )}
                     <div>
                       <label className="text-xs font-semibold text-slate-600">
                         Email
                       </label>
                       <input
                         type="email"
+                        required
+                        autoComplete="email"
                         placeholder="nama@email.com"
+                        value={forgotForm.email}
+                        onChange={(event) =>
+                          updateForgotForm({ email: event.target.value })
+                        }
                         className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-blue-500"
                       />
                     </div>
                     <button
                       type="submit"
-                      className="w-full cursor-pointer rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
+                      disabled={submitting.forgot}
+                      className="w-full cursor-pointer rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-70"
                     >
-                      Kirim Instruksi Reset
+                      {submitting.forgot
+                        ? "Memproses..."
+                        : "Kirim Instruksi Reset"}
                     </button>
                   </form>
+                )}
+
+                {activeTab === "reset" && (
+                  <form
+                    onSubmit={handleResetSubmit}
+                    className="mt-6 space-y-4 text-sm text-slate-600"
+                  >
+                    {feedback.reset && (
+                      <div
+                        className={`rounded-xl border px-4 py-3 text-xs font-semibold ${
+                          feedback.reset.type === "success"
+                            ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                            : "border-rose-200 bg-rose-50 text-rose-700"
+                        }`}
+                      >
+                        {feedback.reset.message}
+                      </div>
+                    )}
+                    <div>
+                      <label className="text-xs font-semibold text-slate-600">
+                        Access Token / OOB Code
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        autoComplete="off"
+                        placeholder="Tempel access token atau oobCode"
+                        value={resetForm.accessToken}
+                        onChange={(event) =>
+                          updateResetForm({ accessToken: event.target.value })
+                        }
+                        className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs text-slate-900 outline-none focus:border-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-slate-600">
+                        Refresh Token (opsional)
+                      </label>
+                      <input
+                        type="text"
+                        autoComplete="off"
+                        placeholder="Tempel refresh token (jika ada)"
+                        value={resetForm.refreshToken}
+                        onChange={(event) =>
+                          updateResetForm({ refreshToken: event.target.value })
+                        }
+                        className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs text-slate-900 outline-none focus:border-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-slate-600">
+                        Password Baru
+                      </label>
+                      <div className="relative mt-2">
+                        <input
+                          type={passwordVisibility.reset ? "text" : "password"}
+                          required
+                          autoComplete="new-password"
+                          placeholder="Masukkan password baru"
+                          value={resetForm.newPassword}
+                          onChange={(event) =>
+                            updateResetForm({ newPassword: event.target.value })
+                          }
+                          className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 pr-16 text-sm text-slate-900 outline-none focus:border-blue-500"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => togglePasswordVisibility("reset")}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-500 transition hover:text-slate-700"
+                        >
+                          {passwordVisibility.reset ? "Hide" : "Show"}
+                        </button>
+                      </div>
+                    </div>
+                    <button
+                      type="submit"
+                      disabled={submitting.reset}
+                      className="w-full cursor-pointer rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-70"
+                    >
+                      {submitting.reset
+                        ? "Memproses..."
+                        : "Simpan Password Baru"}
+                    </button>
+                  </form>
+                )}
+                  </>
                 )}
               </div>
             </div>
