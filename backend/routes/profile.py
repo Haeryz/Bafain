@@ -8,6 +8,7 @@ from controllers.profile_controller import (
   update_avatar,
   update_profile,
 )
+from lib.firestore_client import get_firestore_client
 from lib.supabase_client import get_supabase_client
 from models.profile import (
   OrderStatsResponse,
@@ -23,10 +24,10 @@ router = APIRouter(prefix="/api/v1/me")
 @router.get("", response_model=ProfileResponse)
 def get_me(
   authorization: str | None = Header(default=None),
-  supabase=Depends(get_supabase_client),
+  firestore=Depends(get_firestore_client),
 ):
   access_token = extract_access_token(authorization)
-  return get_profile(access_token, supabase)
+  return get_profile(access_token, firestore)
 
 
 @router.patch("", response_model=ProfileResponse)
@@ -34,10 +35,10 @@ def update_me(
   payload: ProfileUpdateRequest,
   authorization: str | None = Header(default=None),
   x_refresh_token: str | None = Header(default=None, alias="X-Refresh-Token"),
-  supabase=Depends(get_supabase_client),
+  firestore=Depends(get_firestore_client),
 ):
   access_token = extract_access_token(authorization)
-  return update_profile(access_token, payload, supabase, x_refresh_token)
+  return update_profile(access_token, payload, firestore)
 
 
 @router.post("/avatar", response_model=ProfileResponse)
@@ -45,10 +46,10 @@ def update_me_avatar(
   payload: ProfileAvatarRequest,
   authorization: str | None = Header(default=None),
   x_refresh_token: str | None = Header(default=None, alias="X-Refresh-Token"),
-  supabase=Depends(get_supabase_client),
+  firestore=Depends(get_firestore_client),
 ):
   access_token = extract_access_token(authorization)
-  return update_avatar(access_token, payload.avatar_url, supabase, x_refresh_token)
+  return update_avatar(access_token, payload.avatar_url, firestore)
 
 
 @router.get("/order-stats", response_model=OrderStatsResponse)

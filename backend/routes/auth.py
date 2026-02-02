@@ -3,12 +3,14 @@ from fastapi import APIRouter
 from controllers.auth_controller import (
   forgot_password,
   login_user,
+  refresh_session,
   register_user,
   reset_password,
 )
 from models.auth import (
   AuthForgotPasswordRequest,
   AuthLoginRequest,
+  AuthRefreshRequest,
   AuthRegisterRequest,
   AuthRegisterResponse,
   AuthResetPasswordRequest,
@@ -27,6 +29,11 @@ def register(payload: AuthRegisterRequest):
 @router.post("/login", response_model=AuthSessionResponse)
 def login(payload: AuthLoginRequest):
   return login_user(payload)
+
+
+@router.post("/refresh", response_model=AuthSessionResponse)
+def refresh(payload: AuthRefreshRequest):
+  return refresh_session(payload)
 
 
 @router.post("/forgot-password", response_model=MessageResponse)

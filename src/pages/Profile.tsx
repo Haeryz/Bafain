@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo } from "react"
 import {
   Calendar,
   Check,
@@ -13,6 +13,8 @@ import {
 } from "lucide-react"
 import PageLayout from "@/components/PageLayout"
 import { Link } from "react-router-dom"
+import { useAuthStore } from "@/stores/auth/useAuthStore"
+import { useProfileStore } from "@/stores/profile/useProfileStore"
 
 const stats = [
   {
@@ -54,18 +56,24 @@ const lastOrders = [
 ]
 
 export function Profile() {
-  const [isEditing, setIsEditing] = useState(false)
-  const [showUpdated, setShowUpdated] = useState(false)
-  const [profile, setProfile] = useState({
-    fullName: "Google User",
-    email: "user@gmail.com",
-    phone: "081234567890",
-    company: "-",
-    address: "Jakarta, Indonesia",
-    joinedDate: "2025-11-30",
-  })
+  const { isLoggedIn, user } = useAuthStore()
+  const {
+    profile,
+    isEditing,
+    isLoading,
+    isSaving,
+    errorMessage,
+    showUpdated,
+    hydrateFromAuth,
+    updateField,
+    setEditing,
+    setShowUpdated,
+    loadProfile,
+    saveProfile,
+  } = useProfileStore()
 
   const formattedJoinedDate = useMemo(() => {
+    if (!profile.joinedDate) return "-"
     const date = new Date(profile.joinedDate)
     if (Number.isNaN(date.getTime())) return profile.joinedDate
     return date.toLocaleDateString("id-ID", {
@@ -79,7 +87,25 @@ export function Profile() {
     if (!showUpdated) return
     const timeout = window.setTimeout(() => setShowUpdated(false), 2500)
     return () => window.clearTimeout(timeout)
-  }, [showUpdated])
+  }, [showUpdated, setShowUpdated])
+
+  useEffect(() => {
+    hydrateFromAuth(user)
+  }, [user, hydrateFromAuth])
+
+  useEffect(() => {
+    if (!isLoggedIn) return
+    loadProfile()
+  }, [isLoggedIn, loadProfile])
+
+  const handleToggleEdit = async () => {
+    if (!isLoggedIn || isSaving || isLoading) return
+    if (!isEditing) {
+      setEditing(true)
+      return
+    }
+    await saveProfile()
+  }
 
   return (
     <PageLayout>
@@ -113,16 +139,16 @@ export function Profile() {
             </div>
               <button
                 type="button"
-                onClick={() => {
-                  if (isEditing) {
-                    setShowUpdated(true)
-                  }
-                  setIsEditing((prev) => !prev)
-                }}
-                className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-slate-300"
+                onClick={handleToggleEdit}
+                disabled={!isLoggedIn || isSaving || isLoading}
+                className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-slate-300 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <Pencil className="h-4 w-4 text-slate-500" />
-                {isEditing ? "Simpan Profil" : "Edit Profil"}
+                {isSaving
+                  ? "Menyimpan..."
+                  : isEditing
+                  ? "Simpan Profil"
+                  : "Edit Profil"}
               </button>
               {showUpdated && (
                 <div className="absolute right-28 top-1/2 -translate-y-1/2 inline-flex items-center gap-2 rounded-full bg-emerald-100 px-4 py-2 text-xs font-semibold text-emerald-700 shadow-sm">
@@ -130,6 +156,17 @@ export function Profile() {
                 </div>
               )}
             </div>
+
+            {errorMessage && (
+              <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs font-semibold text-rose-700">
+                {errorMessage}
+              </div>
+            )}
+            {isLoading && (
+              <div className="mt-4 rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-xs font-semibold text-blue-600">
+                Memuat profil...
+              </div>
+            )}
 
             <div className="mt-8 grid gap-4 md:grid-cols-2">
               <div>
@@ -142,10 +179,7 @@ export function Profile() {
                     type="text"
                     value={profile.fullName}
                     onChange={(event) =>
-                      setProfile((prev) => ({
-                        ...prev,
-                        fullName: event.target.value,
-                      }))
+                      updateField("fullName", event.target.value)
                     }
                     className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none focus:border-blue-500"
                   />
@@ -165,10 +199,7 @@ export function Profile() {
                     type="email"
                     value={profile.email}
                     onChange={(event) =>
-                      setProfile((prev) => ({
-                        ...prev,
-                        email: event.target.value,
-                      }))
+                      updateField("email", event.target.value)
                     }
                     className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none focus:border-blue-500"
                   />
@@ -188,10 +219,7 @@ export function Profile() {
                     type="tel"
                     value={profile.phone}
                     onChange={(event) =>
-                      setProfile((prev) => ({
-                        ...prev,
-                        phone: event.target.value,
-                      }))
+                      updateField("phone", event.target.value)
                     }
                     className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none focus:border-blue-500"
                   />
@@ -211,10 +239,7 @@ export function Profile() {
                     type="text"
                     value={profile.company}
                     onChange={(event) =>
-                      setProfile((prev) => ({
-                        ...prev,
-                        company: event.target.value,
-                      }))
+                      updateField("company", event.target.value)
                     }
                     className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none focus:border-blue-500"
                   />
@@ -234,10 +259,7 @@ export function Profile() {
                     type="text"
                     value={profile.address}
                     onChange={(event) =>
-                      setProfile((prev) => ({
-                        ...prev,
-                        address: event.target.value,
-                      }))
+                      updateField("address", event.target.value)
                     }
                     className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none focus:border-blue-500"
                   />
@@ -257,10 +279,7 @@ export function Profile() {
                     type="date"
                     value={profile.joinedDate}
                     onChange={(event) =>
-                      setProfile((prev) => ({
-                        ...prev,
-                        joinedDate: event.target.value,
-                      }))
+                      updateField("joinedDate", event.target.value)
                     }
                     className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none focus:border-blue-500"
                   />

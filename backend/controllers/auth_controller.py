@@ -18,6 +18,7 @@ from lib.firebase_identity import (
 from models.auth import (
   AuthForgotPasswordRequest,
   AuthLoginRequest,
+  AuthRefreshRequest,
   AuthRegisterRequest,
   AuthResetPasswordRequest,
 )
@@ -125,6 +126,19 @@ def _build_user_fallback(payload: dict[str, Any]) -> dict[str, Any] | None:
   return user or None
 
 
+def _build_user_refresh_fallback(
+  payload: dict[str, Any]
+) -> dict[str, Any] | None:
+  user: dict[str, Any] = {}
+  local_id = (
+    payload.get("user_id") or payload.get("userId") or payload.get("localId")
+  )
+  if local_id:
+    user["id"] = local_id
+    user["uid"] = local_id
+  return user or None
+
+
 def _build_user_payload(
   record: firebase_auth.UserRecord | None,
   fallback: dict[str, Any] | None = None,
@@ -214,6 +228,36 @@ def login_user(payload: AuthLoginRequest) -> dict[str, Any]:
 
   return {
     "user": _build_user_payload(user_record, _build_user_fallback(response)),
+    "session": _build_session(response),
+  }
+
+
+def refresh_session(payload: AuthRefreshRequest) -> dict[str, Any]:
+  try:
+    response = refresh_id_token(payload.refresh_token)
+  except FirebaseIdentityError as exc:
+    _raise_identity_error(exc, "Invalid or expired refresh token", 401)
+  except Exception as exc:
+    logger.warning("Firebase refresh token error: %s", str(exc))
+    raise HTTPException(
+      status_code=status.HTTP_502_BAD_GATEWAY,
+      detail=_auth_error_detail(exc, "Auth service unavailable"),
+    ) from exc
+
+  local_id = (
+    response.get("user_id") or response.get("userId") or response.get("localId")
+  )
+  user_record = None
+  if local_id and _maybe_init_firebase():
+    try:
+      user_record = firebase_auth.get_user(local_id)
+    except Exception as exc:
+      logger.warning("Firebase get_user failed: %s", str(exc))
+
+  return {
+    "user": _build_user_payload(
+      user_record, _build_user_refresh_fallback(response)
+    ),
     "session": _build_session(response),
   }
 

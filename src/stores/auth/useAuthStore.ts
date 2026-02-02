@@ -64,6 +64,8 @@ type AuthStoreState = {
     reset: Feedback | null
   }
   setActiveTab: (tab: AuthTab) => void
+  setUser: (user: Record<string, unknown> | null) => void
+  setSession: (session: Record<string, unknown> | null) => void
   updateLoginForm: (payload: Partial<AuthStoreState["loginForm"]>) => void
   updateRegisterForm: (
     payload: Partial<AuthStoreState["registerForm"]>
@@ -175,6 +177,20 @@ export const useAuthStore = create<AuthStoreState>((set, get) => ({
     reset: null,
   },
   setActiveTab: (tab) => set({ activeTab: tab }),
+  setUser: (user) => {
+    const session = get().session
+    storeAuthSession(session, user)
+    set({ user })
+  },
+  setSession: (session) => {
+    const user = get().user
+    storeAuthSession(session, user)
+    const tokens = extractTokens(session)
+    set({
+      session,
+      isLoggedIn: Boolean(tokens.accessToken),
+    })
+  },
   updateLoginForm: (payload) =>
     set((state) => ({
       loginForm: { ...state.loginForm, ...payload },

@@ -25,6 +25,10 @@ class AuthResetPasswordRequest(BaseModel):
   new_password: str = Field(min_length=8, max_length=1000)
 
 
+class AuthRefreshRequest(BaseModel):
+  refresh_token: str = Field(min_length=10)
+
+
 class AuthSessionResponse(BaseModel):
   user: dict[str, Any] | None = None
   session: dict[str, Any] | None = None

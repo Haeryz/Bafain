@@ -90,3 +90,7 @@ export function resetPassword(payload: {
     auth: false,
   })
 }
+
+export function refreshSession(payload: { refresh_token: string }) {
+  return request<AuthSession>("/auth/refresh", payload, { auth: false })
+}

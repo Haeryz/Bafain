@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 class AddressBase(BaseModel):
   label: Optional[str] = Field(default=None, max_length=120)
   recipient_name: Optional[str] = Field(default=None, max_length=200)
+  email: Optional[str] = Field(default=None, max_length=320)
   phone: Optional[str] = Field(default=None, max_length=50)
   address_line1: Optional[str] = Field(default=None, max_length=500)
   address_line2: Optional[str] = Field(default=None, max_length=500)

@@ -1,9 +1,13 @@
 import logging
 import os
+from datetime import datetime, timezone
 from typing import Any
 
 from fastapi import HTTPException, status
-from supabase import AuthSessionMissingError, Client
+from firebase_admin import auth as firebase_auth
+from firebase_admin import firestore
+from google.cloud.firestore_v1 import Client as FirestoreClient
+from supabase import Client as SupabaseClient
 
 from models.profile import ProfileUpdateRequest
 
@@ -39,7 +43,29 @@ def _to_dict(value: Any) -> dict[str, Any] | None:
   return None
 
 
-def _get_user(access_token: str, supabase: Client):
+def _verify_id_token(access_token: str) -> dict[str, Any]:
+  try:
+    return firebase_auth.verify_id_token(access_token)
+  except Exception as exc:
+    logger.warning("Firebase token verification failed: %s", str(exc))
+    raise HTTPException(
+      status_code=status.HTTP_401_UNAUTHORIZED,
+      detail="Invalid or expired token",
+    ) from exc
+
+
+def _get_firebase_user(uid: str):
+  try:
+    return firebase_auth.get_user(uid)
+  except Exception as exc:
+    logger.warning("Firebase get_user error: %s", str(exc))
+    raise HTTPException(
+      status_code=status.HTTP_401_UNAUTHORIZED,
+      detail="Invalid or expired token",
+    ) from exc
+
+
+def _get_supabase_user(access_token: str, supabase: SupabaseClient):
   try:
     response = supabase.auth.get_user(access_token)
   except Exception as exc:
@@ -58,96 +84,177 @@ def _get_user(access_token: str, supabase: Client):
   return user
 
 
-def _profile_response(user: Any) -> dict[str, Any]:
-  return {"user": _to_dict(user) or {}}
+def _profile_collection() -> str:
+  return (
+    os.getenv("FIRESTORE_PROFILE_COLLECTION")
+    or os.getenv("FIREBASE_PROFILE_COLLECTION")
+    or "profiles"
+  )
 
 
-def get_profile(access_token: str, supabase: Client) -> dict[str, Any]:
-  user = _get_user(access_token, supabase)
-  return _profile_response(user)
-
-
-def _merge_metadata(
-  current: dict[str, Any], payload: ProfileUpdateRequest
-) -> dict[str, Any]:
-  metadata = {**current}
-  if payload.metadata:
-    metadata.update(payload.metadata)
-  if payload.full_name is not None:
-    metadata["full_name"] = payload.full_name
-  if payload.avatar_url is not None:
-    metadata["avatar_url"] = payload.avatar_url
-  return metadata
-
-
-def _set_session(
-  access_token: str, refresh_token: str | None, supabase: Client
-) -> None:
-  token = refresh_token or access_token
+def _ms_to_iso_date(timestamp_ms: int | None) -> str | None:
+  if not timestamp_ms:
+    return None
   try:
-    supabase.auth.set_session(access_token, token)
-  except AuthSessionMissingError as exc:
-    raise HTTPException(
-      status_code=status.HTTP_401_UNAUTHORIZED,
-      detail="Session expired. Please sign in again.",
-    ) from exc
-  except Exception as exc:
-    logger.warning("Supabase auth set_session error: %s", str(exc))
+    dt = datetime.fromtimestamp(timestamp_ms / 1000, tz=timezone.utc)
+  except Exception:
+    return None
+  return dt.date().isoformat()
+
+
+def _build_user_payload(record) -> dict[str, Any]:
+  user: dict[str, Any] = {
+    "id": record.uid,
+    "uid": record.uid,
+    "email_verified": record.email_verified,
+  }
+  if record.email:
+    user["email"] = record.email
+  if record.display_name:
+    user["display_name"] = record.display_name
+  if record.phone_number:
+    user["phone_number"] = record.phone_number
+  if record.photo_url:
+    user["photo_url"] = record.photo_url
+  metadata = getattr(record, "user_metadata", None)
+  created_at = getattr(metadata, "creation_timestamp", None) if metadata else None
+  created_at_iso = _ms_to_iso_date(created_at)
+  if created_at_iso:
+    user["created_at"] = created_at_iso
+  return user
+
+
+def _build_profile_payload(record, profile_data: dict[str, Any]) -> dict[str, Any]:
+  metadata = getattr(record, "user_metadata", None)
+  created_at = getattr(metadata, "creation_timestamp", None) if metadata else None
+  joined_date = profile_data.get("joined_date") or _ms_to_iso_date(created_at)
+  return {
+    "full_name": profile_data.get("full_name") or record.display_name or None,
+    "email": profile_data.get("email") or record.email or None,
+    "phone": profile_data.get("phone") or record.phone_number or None,
+    "company": profile_data.get("company") or None,
+    "address": profile_data.get("address") or None,
+    "joined_date": joined_date,
+    "avatar_url": profile_data.get("avatar_url") or record.photo_url or None,
+  }
+
+
+def _profile_response(record, profile_data: dict[str, Any]) -> dict[str, Any]:
+  return {
+    "user": _build_user_payload(record),
+    "profile": _build_profile_payload(record, profile_data),
+  }
+
+
+def get_profile(access_token: str, firestore_client: FirestoreClient) -> dict[str, Any]:
+  claims = _verify_id_token(access_token)
+  uid = claims.get("uid") or claims.get("user_id")
+  if not uid:
     raise HTTPException(
       status_code=status.HTTP_401_UNAUTHORIZED,
       detail="Invalid or expired token",
-    ) from exc
+    )
+  user_record = _get_firebase_user(uid)
+  doc = (
+    firestore_client.collection(_profile_collection())
+    .document(uid)
+    .get()
+  )
+  profile_data = doc.to_dict() if doc and doc.exists else {}
+  return _profile_response(user_record, profile_data or {})
+
+
+def _looks_like_e164(value: str) -> bool:
+  if not value or not value.startswith("+"):
+    return False
+  digits = value[1:]
+  return digits.isdigit() and 8 <= len(digits) <= 15
 
 
 def update_profile(
   access_token: str,
   payload: ProfileUpdateRequest,
-  supabase: Client,
-  refresh_token: str | None = None,
+  firestore_client: FirestoreClient,
 ) -> dict[str, Any]:
-  user = _get_user(access_token, supabase)
-  user_dict = _to_dict(user) or {}
-  current_metadata = user_dict.get("user_metadata") or {}
-
-  metadata = _merge_metadata(current_metadata, payload)
-
-  attributes: dict[str, Any] = {}
-  if payload.phone is not None:
-    attributes["phone"] = payload.phone
-  if metadata != current_metadata:
-    attributes["data"] = metadata
-
-  if not attributes:
-    return _profile_response(user)
-
-  _set_session(access_token, refresh_token, supabase)
-
-  try:
-    response = supabase.auth.update_user(attributes)
-  except AuthSessionMissingError as exc:
+  claims = _verify_id_token(access_token)
+  uid = claims.get("uid") or claims.get("user_id")
+  if not uid:
     raise HTTPException(
       status_code=status.HTTP_401_UNAUTHORIZED,
-      detail="Session expired. Please sign in again.",
-    ) from exc
-  except Exception as exc:
-    logger.warning("Supabase auth update_user error: %s", str(exc))
-    raise HTTPException(
-      status_code=status.HTTP_502_BAD_GATEWAY,
-      detail="Unable to update profile right now",
-    ) from exc
+      detail="Invalid or expired token",
+    )
 
-  updated_user = getattr(response, "user", None) or user
-  return _profile_response(updated_user)
+  auth_updates: dict[str, Any] = {}
+  if payload.full_name is not None:
+    auth_updates["display_name"] = payload.full_name
+  if payload.email is not None:
+    auth_updates["email"] = payload.email
+  if payload.avatar_url is not None:
+    auth_updates["photo_url"] = payload.avatar_url
+  if payload.phone is not None and _looks_like_e164(payload.phone):
+    auth_updates["phone_number"] = payload.phone
+
+  if auth_updates:
+    try:
+      firebase_auth.update_user(uid, **auth_updates)
+    except firebase_auth.EmailAlreadyExistsError as exc:
+      raise HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail="Email already in use.",
+      ) from exc
+    except firebase_auth.InvalidArgumentError as exc:
+      raise HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail="Invalid profile data.",
+      ) from exc
+    except firebase_auth.UserNotFoundError as exc:
+      raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Invalid or expired token",
+      ) from exc
+    except Exception as exc:
+      logger.warning("Firebase update_user error: %s", str(exc))
+      raise HTTPException(
+        status_code=status.HTTP_502_BAD_GATEWAY,
+        detail="Unable to update profile right now",
+      ) from exc
+
+  profile_updates: dict[str, Any] = {}
+  if payload.full_name is not None:
+    profile_updates["full_name"] = payload.full_name
+  if payload.email is not None:
+    profile_updates["email"] = payload.email
+  if payload.phone is not None:
+    profile_updates["phone"] = payload.phone
+  if payload.company is not None:
+    profile_updates["company"] = payload.company
+  if payload.address is not None:
+    profile_updates["address"] = payload.address
+  if payload.joined_date is not None:
+    profile_updates["joined_date"] = payload.joined_date
+  if payload.avatar_url is not None:
+    profile_updates["avatar_url"] = payload.avatar_url
+  if payload.metadata is not None:
+    profile_updates["metadata"] = payload.metadata
+
+  if profile_updates:
+    profile_updates["updated_at"] = firestore.SERVER_TIMESTAMP
+    (
+      firestore_client.collection(_profile_collection())
+      .document(uid)
+      .set(profile_updates, merge=True)
+    )
+
+  return get_profile(access_token, firestore_client)
 
 
 def update_avatar(
   access_token: str,
   avatar_url: str,
-  supabase: Client,
-  refresh_token: str | None = None,
+  firestore_client: FirestoreClient,
 ) -> dict[str, Any]:
   payload = ProfileUpdateRequest(avatar_url=avatar_url)
-  return update_profile(access_token, payload, supabase, refresh_token)
+  return update_profile(access_token, payload, firestore_client)
 
 
 def _resolve_orders_table() -> str | None:
@@ -172,8 +279,8 @@ def _is_missing_table(error: Any) -> bool:
   return "does not exist" in message or "schema cache" in message
 
 
-def get_order_stats(access_token: str, supabase: Client) -> dict[str, Any]:
-  user = _get_user(access_token, supabase)
+def get_order_stats(access_token: str, supabase: SupabaseClient) -> dict[str, Any]:
+  user = _get_supabase_user(access_token, supabase)
   user_dict = _to_dict(user) or {}
   user_id = user_dict.get("id")
   if not user_id:
@@ -219,9 +326,9 @@ def get_order_stats(access_token: str, supabase: Client) -> dict[str, Any]:
 
 
 def get_recent_orders(
-  access_token: str, supabase: Client, limit: int
+  access_token: str, supabase: SupabaseClient, limit: int
 ) -> dict[str, Any]:
-  user = _get_user(access_token, supabase)
+  user = _get_supabase_user(access_token, supabase)
   user_dict = _to_dict(user) or {}
   user_id = user_dict.get("id")
   if not user_id:

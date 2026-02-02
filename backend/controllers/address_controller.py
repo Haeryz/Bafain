@@ -1,9 +1,14 @@
 import logging
+import os
 import uuid
+from datetime import datetime
 from typing import Any
 
 from fastapi import HTTPException, status
-from supabase import Client
+from firebase_admin import auth as firebase_auth
+from firebase_admin import firestore
+from google.cloud.firestore_v1 import Client as FirestoreClient
+from google.cloud.firestore_v1.transforms import Sentinel
 
 from models.address import (
   AddressCreateRequest,
@@ -32,6 +37,17 @@ def extract_access_token(authorization: str | None) -> str:
   return token.strip()
 
 
+def _verify_id_token(access_token: str) -> dict[str, Any]:
+  try:
+    return firebase_auth.verify_id_token(access_token)
+  except Exception as exc:
+    logger.warning("Firebase token verification failed: %s", str(exc))
+    raise HTTPException(
+      status_code=status.HTTP_401_UNAUTHORIZED,
+      detail="Invalid or expired token",
+    ) from exc
+
+
 def _payload_to_dict(payload: Any) -> dict[str, Any]:
   if payload is None:
     return {}
@@ -44,70 +60,205 @@ def _payload_to_dict(payload: Any) -> dict[str, Any]:
   return {}
 
 
-def _get_user(access_token: str, supabase: Client):
-  try:
-    response = supabase.auth.get_user(access_token)
-  except Exception as exc:
-    logger.warning("Supabase auth get_user error: %s", str(exc))
-    raise HTTPException(
-      status_code=status.HTTP_401_UNAUTHORIZED,
-      detail="Invalid or expired token",
-    ) from exc
+def _profile_collection() -> str:
+  return (
+    os.getenv("FIRESTORE_PROFILE_COLLECTION")
+    or os.getenv("FIREBASE_PROFILE_COLLECTION")
+    or "profiles"
+  )
 
-  user = getattr(response, "user", None)
-  if user is None:
+
+def _addresses_subcollection() -> str:
+  return (
+    os.getenv("FIRESTORE_ADDRESS_SUBCOLLECTION")
+    or os.getenv("FIREBASE_ADDRESS_SUBCOLLECTION")
+    or "addresses"
+  )
+
+
+def _addresses_collection(
+  firestore_client: FirestoreClient, uid: str
+):
+  return (
+    firestore_client.collection(_profile_collection())
+    .document(uid)
+    .collection(_addresses_subcollection())
+  )
+
+
+def _build_address(address_id: str, data: dict[str, Any]) -> dict[str, Any]:
+  payload = _sanitize_payload(data)
+  payload["id"] = address_id
+  if "is_default" not in payload:
+    payload["is_default"] = False
+  return payload
+
+
+def _sanitize_payload(value: Any) -> Any:
+  if isinstance(value, Sentinel):
+    return None
+  if isinstance(value, datetime):
+    return value.isoformat()
+  if isinstance(value, list):
+    return [_sanitize_payload(item) for item in value]
+  if isinstance(value, dict):
+    cleaned: dict[str, Any] = {}
+    for key, item in value.items():
+      sanitized = _sanitize_payload(item)
+      if sanitized is not None:
+        cleaned[key] = sanitized
+    return cleaned
+  return value
+
+
+def _unset_default_addresses(
+  firestore_client: FirestoreClient, uid: str, keep_id: str
+) -> None:
+  collection = _addresses_collection(firestore_client, uid)
+  docs = collection.where(field_path="is_default", op_string="==", value=True).stream()
+  batch = firestore_client.batch()
+  changed = False
+  for doc in docs:
+    if doc.id == keep_id:
+      continue
+    batch.update(doc.reference, {"is_default": False})
+    changed = True
+  if changed:
+    batch.commit()
+
+
+def list_addresses(
+  access_token: str, firestore_client: FirestoreClient
+) -> AddressListResponse:
+  claims = _verify_id_token(access_token)
+  uid = claims.get("uid") or claims.get("user_id")
+  if not uid:
     raise HTTPException(
       status_code=status.HTTP_401_UNAUTHORIZED,
       detail="Invalid or expired token",
     )
-  return user
 
+  addresses: list[dict[str, Any]] = []
+  for doc in _addresses_collection(firestore_client, uid).stream():
+    data = doc.to_dict() or {}
+    addresses.append(_build_address(doc.id, data))
 
-def list_addresses(access_token: str, supabase: Client) -> AddressListResponse:
-  _get_user(access_token, supabase)
-  return {"addresses": []}
-
-
-def _build_address(
-  address_id: str, payload: Any, is_default: bool | None = None
-) -> dict[str, Any]:
-  data = _payload_to_dict(payload)
-  data["id"] = address_id
-  if is_default is not None:
-    data["is_default"] = is_default
-  elif "is_default" not in data:
-    data["is_default"] = False
-  return data
+  addresses.sort(key=lambda item: (not item.get("is_default", False)))
+  return {"addresses": addresses}
 
 
 def create_address(
-  access_token: str, payload: AddressCreateRequest, supabase: Client
+  access_token: str,
+  payload: AddressCreateRequest,
+  firestore_client: FirestoreClient,
 ) -> AddressResponse:
-  _get_user(access_token, supabase)
+  claims = _verify_id_token(access_token)
+  uid = claims.get("uid") or claims.get("user_id")
+  if not uid:
+    raise HTTPException(
+      status_code=status.HTTP_401_UNAUTHORIZED,
+      detail="Invalid or expired token",
+    )
+
+  data = _payload_to_dict(payload)
   address_id = uuid.uuid4().hex
-  return {"address": _build_address(address_id, payload)}
+  data["created_at"] = firestore.SERVER_TIMESTAMP
+  data["updated_at"] = firestore.SERVER_TIMESTAMP
+
+  if data.get("is_default"):
+    _unset_default_addresses(firestore_client, uid, address_id)
+
+  _addresses_collection(firestore_client, uid).document(address_id).set(data)
+  snapshot = _addresses_collection(firestore_client, uid).document(address_id).get()
+  current = snapshot.to_dict() if snapshot and snapshot.exists else data
+  return {"address": _build_address(address_id, current)}
 
 
 def update_address(
   access_token: str,
   address_id: str,
   payload: AddressUpdateRequest,
-  supabase: Client,
+  firestore_client: FirestoreClient,
 ) -> AddressResponse:
-  _get_user(access_token, supabase)
-  return {"address": _build_address(address_id, payload)}
+  claims = _verify_id_token(access_token)
+  uid = claims.get("uid") or claims.get("user_id")
+  if not uid:
+    raise HTTPException(
+      status_code=status.HTTP_401_UNAUTHORIZED,
+      detail="Invalid or expired token",
+    )
+
+  doc_ref = _addresses_collection(firestore_client, uid).document(address_id)
+  snapshot = doc_ref.get()
+  if not snapshot.exists:
+    raise HTTPException(
+      status_code=status.HTTP_404_NOT_FOUND,
+      detail="Address not found",
+    )
+
+  data = _payload_to_dict(payload)
+  if not data:
+    current = snapshot.to_dict() or {}
+    return {"address": _build_address(address_id, current)}
+
+  data["updated_at"] = firestore.SERVER_TIMESTAMP
+  if data.get("is_default"):
+    _unset_default_addresses(firestore_client, uid, address_id)
+
+  doc_ref.set(data, merge=True)
+  refreshed = doc_ref.get()
+  merged = refreshed.to_dict() if refreshed and refreshed.exists else (snapshot.to_dict() or {})
+  return {"address": _build_address(address_id, merged)}
 
 
 def delete_address(
-  access_token: str, address_id: str, supabase: Client
+  access_token: str, address_id: str, firestore_client: FirestoreClient
 ) -> AddressDeleteResponse:
-  _get_user(access_token, supabase)
+  claims = _verify_id_token(access_token)
+  uid = claims.get("uid") or claims.get("user_id")
+  if not uid:
+    raise HTTPException(
+      status_code=status.HTTP_401_UNAUTHORIZED,
+      detail="Invalid or expired token",
+    )
+
+  doc_ref = _addresses_collection(firestore_client, uid).document(address_id)
+  snapshot = doc_ref.get()
+  if not snapshot.exists:
+    return {"message": "Address not found", "address_id": address_id, "deleted": False}
+
+  doc_ref.delete()
   return {"message": "Address deleted", "address_id": address_id, "deleted": True}
 
 
 def set_default_address(
-  access_token: str, address_id: str, supabase: Client
+  access_token: str, address_id: str, firestore_client: FirestoreClient
 ) -> AddressDefaultResponse:
-  _get_user(access_token, supabase)
-  address = _build_address(address_id, {}, is_default=True)
-  return {"address": address, "message": "Default address updated"}
+  claims = _verify_id_token(access_token)
+  uid = claims.get("uid") or claims.get("user_id")
+  if not uid:
+    raise HTTPException(
+      status_code=status.HTTP_401_UNAUTHORIZED,
+      detail="Invalid or expired token",
+    )
+
+  doc_ref = _addresses_collection(firestore_client, uid).document(address_id)
+  snapshot = doc_ref.get()
+  if not snapshot.exists:
+    raise HTTPException(
+      status_code=status.HTTP_404_NOT_FOUND,
+      detail="Address not found",
+    )
+
+  _unset_default_addresses(firestore_client, uid, address_id)
+  doc_ref.set(
+    {"is_default": True, "updated_at": firestore.SERVER_TIMESTAMP},
+    merge=True,
+  )
+  refreshed = doc_ref.get()
+  data = refreshed.to_dict() if refreshed and refreshed.exists else (snapshot.to_dict() or {})
+  data["is_default"] = True
+  return {
+    "address": _build_address(address_id, data),
+    "message": "Default address updated",
+  }
