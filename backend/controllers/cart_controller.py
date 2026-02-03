@@ -14,6 +14,7 @@ from models.cart import (
 )
 
 logger = logging.getLogger("bafain.cart")
+_CART_ITEMS_BY_USER: dict[str, dict[str, dict[str, Any]]] = {}
 
 
 def extract_access_token(authorization: str | None) -> str:
@@ -50,23 +51,36 @@ def _get_user(access_token: str, supabase: Client):
   return user
 
 
+def _get_cart_items(user_id: str) -> dict[str, dict[str, Any]]:
+  return _CART_ITEMS_BY_USER.setdefault(user_id, {})
+
+
 def get_cart(access_token: str, supabase: Client) -> CartResponse:
-  _get_user(access_token, supabase)
-  return {"items": [], "subtotal": 0, "currency": "IDR"}
+  user = _get_user(access_token, supabase)
+  user_id = getattr(user, "id", None)
+  if not user_id:
+    raise HTTPException(
+      status_code=status.HTTP_401_UNAUTHORIZED,
+      detail="Invalid or expired token",
+    )
+  items = list(_get_cart_items(user_id).values())
+  return {"items": items, "subtotal": 0, "currency": "IDR"}
 
 
 def add_cart_item(
   access_token: str, payload: CartItemCreateRequest, supabase: Client
 ) -> CartItemResponse:
-  _get_user(access_token, supabase)
+  user = _get_user(access_token, supabase)
+  user_id = getattr(user, "id", None)
+  if not user_id:
+    raise HTTPException(
+      status_code=status.HTTP_401_UNAUTHORIZED,
+      detail="Invalid or expired token",
+    )
   item_id = uuid.uuid4().hex
-  return {
-    "item": {
-      "id": item_id,
-      "product_id": payload.product_id,
-      "qty": payload.qty,
-    }
-  }
+  item = {"id": item_id, "product_id": payload.product_id, "qty": payload.qty}
+  _get_cart_items(user_id)[item_id] = item
+  return {"item": item}
 
 
 def update_cart_item(
@@ -75,13 +89,39 @@ def update_cart_item(
   payload: CartItemUpdateRequest,
   supabase: Client,
 ) -> CartItemResponse:
-  _get_user(access_token, supabase)
-  return {"item": {"id": item_id, "qty": payload.qty}}
+  user = _get_user(access_token, supabase)
+  user_id = getattr(user, "id", None)
+  if not user_id:
+    raise HTTPException(
+      status_code=status.HTTP_401_UNAUTHORIZED,
+      detail="Invalid or expired token",
+    )
+  items = _get_cart_items(user_id)
+  if item_id not in items:
+    raise HTTPException(
+      status_code=status.HTTP_404_NOT_FOUND,
+      detail="Cart item not found",
+    )
+  items[item_id]["qty"] = payload.qty
+  return {"item": items[item_id]}
 
 
 def delete_cart_item(
   access_token: str, item_id: str, supabase: Client
 ) -> CartItemDeleteResponse:
-  _get_user(access_token, supabase)
+  user = _get_user(access_token, supabase)
+  user_id = getattr(user, "id", None)
+  if not user_id:
+    raise HTTPException(
+      status_code=status.HTTP_401_UNAUTHORIZED,
+      detail="Invalid or expired token",
+    )
+  items = _get_cart_items(user_id)
+  if item_id not in items:
+    raise HTTPException(
+      status_code=status.HTTP_404_NOT_FOUND,
+      detail="Cart item not found",
+    )
+  items.pop(item_id, None)
   return {"message": "Cart item deleted", "item_id": item_id, "deleted": True}
 

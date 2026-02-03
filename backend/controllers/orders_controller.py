@@ -15,6 +15,7 @@ from models.orders import (
 )
 
 logger = logging.getLogger("bafain.orders")
+_ORDERS_BY_USER: dict[str, dict[str, dict[str, Any]]] = {}
 
 
 def extract_access_token(authorization: str | None) -> str:
@@ -51,20 +52,40 @@ def _get_user(access_token: str, supabase: Client):
   return user
 
 
+def _get_orders(user_id: str) -> dict[str, dict[str, Any]]:
+  return _ORDERS_BY_USER.setdefault(user_id, {})
+
+
 def create_order(
   access_token: str, payload: OrderCreateRequest, supabase: Client
 ) -> OrderResponse:
-  _get_user(access_token, supabase)
+  user = _get_user(access_token, supabase)
+  user_id = getattr(user, "id", None)
+  if not user_id:
+    raise HTTPException(
+      status_code=status.HTTP_401_UNAUTHORIZED,
+      detail="Invalid or expired token",
+    )
   order_id = uuid.uuid4().hex
-  return {
-    "order": {
-      "id": order_id,
-      "status": "in-queue",
-      "address": payload.address,
-      "shipping_option": payload.shipping_option,
-      "customer_note": payload.customer_note,
-    }
+  subtotal = payload.subtotal or 0
+  shipping_fee = payload.shipping_fee or 0
+  total = payload.total or (subtotal + shipping_fee)
+  order = {
+    "id": order_id,
+    "status": "awaiting-payment",
+    "payment_status": "pending",
+    "address": payload.address,
+    "shipping_option": payload.shipping_option,
+    "customer_note": payload.customer_note,
+    "items": payload.items or [],
+    "subtotal": subtotal,
+    "shipping_fee": shipping_fee,
+    "total": total,
+    "currency": "IDR",
+    "payment_method": payload.payment_method,
   }
+  _get_orders(user_id)[order_id] = order
+  return {"order": order}
 
 
 def list_orders(
@@ -75,21 +96,66 @@ def list_orders(
   page: int,
   limit: int,
 ) -> OrderListResponse:
-  _get_user(access_token, supabase)
-  return {"orders": [], "page": page, "limit": limit, "total": 0}
+  user = _get_user(access_token, supabase)
+  user_id = getattr(user, "id", None)
+  if not user_id:
+    raise HTTPException(
+      status_code=status.HTTP_401_UNAUTHORIZED,
+      detail="Invalid or expired token",
+    )
+  orders = list(_get_orders(user_id).values())
+  if status_filter:
+    orders = [order for order in orders if order.get("status") == status_filter]
+  if query_text:
+    query = query_text.lower()
+    orders = [
+      order
+      for order in orders
+      if query in str(order.get("id", "")).lower()
+      or query in str(order.get("customer_note", "")).lower()
+    ]
+  total = len(orders)
+  start = (page - 1) * limit
+  end = start + limit
+  return {"orders": orders[start:end], "page": page, "limit": limit, "total": total}
 
 
 def get_order_detail(
   access_token: str, order_id: str, supabase: Client
 ) -> OrderResponse:
-  _get_user(access_token, supabase)
-  return {"order": {"id": order_id, "status": "in-queue"}}
+  user = _get_user(access_token, supabase)
+  user_id = getattr(user, "id", None)
+  if not user_id:
+    raise HTTPException(
+      status_code=status.HTTP_401_UNAUTHORIZED,
+      detail="Invalid or expired token",
+    )
+  order = _get_orders(user_id).get(order_id)
+  if not order:
+    raise HTTPException(
+      status_code=status.HTTP_404_NOT_FOUND,
+      detail="Order not found",
+    )
+  return {"order": order}
 
 
 def cancel_order(
   access_token: str, order_id: str, supabase: Client
 ) -> OrderActionResponse:
-  _get_user(access_token, supabase)
+  user = _get_user(access_token, supabase)
+  user_id = getattr(user, "id", None)
+  if not user_id:
+    raise HTTPException(
+      status_code=status.HTTP_401_UNAUTHORIZED,
+      detail="Invalid or expired token",
+    )
+  order = _get_orders(user_id).get(order_id)
+  if not order:
+    raise HTTPException(
+      status_code=status.HTTP_404_NOT_FOUND,
+      detail="Order not found",
+    )
+  order["status"] = "cancelled"
   return {
     "order_id": order_id,
     "status": "cancelled",
@@ -100,11 +166,50 @@ def cancel_order(
 def confirm_received(
   access_token: str, order_id: str, supabase: Client
 ) -> OrderActionResponse:
-  _get_user(access_token, supabase)
+  user = _get_user(access_token, supabase)
+  user_id = getattr(user, "id", None)
+  if not user_id:
+    raise HTTPException(
+      status_code=status.HTTP_401_UNAUTHORIZED,
+      detail="Invalid or expired token",
+    )
+  order = _get_orders(user_id).get(order_id)
+  if not order:
+    raise HTTPException(
+      status_code=status.HTTP_404_NOT_FOUND,
+      detail="Order not found",
+    )
+  order["status"] = "selesai"
   return {
     "order_id": order_id,
     "status": "selesai",
     "message": "Order marked as received",
+  }
+
+
+def check_payment(
+  access_token: str, order_id: str, supabase: Client
+) -> OrderActionResponse:
+  user = _get_user(access_token, supabase)
+  user_id = getattr(user, "id", None)
+  if not user_id:
+    raise HTTPException(
+      status_code=status.HTTP_401_UNAUTHORIZED,
+      detail="Invalid or expired token",
+    )
+  order = _get_orders(user_id).get(order_id)
+  if not order:
+    raise HTTPException(
+      status_code=status.HTTP_404_NOT_FOUND,
+      detail="Order not found",
+    )
+  if order.get("payment_status") != "paid":
+    order["payment_status"] = "paid"
+    order["status"] = "in-queue"
+  return {
+    "order_id": order_id,
+    "status": order.get("status", "in-queue"),
+    "message": "Payment verified",
   }
 
 

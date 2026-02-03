@@ -4,7 +4,7 @@ from controllers.invoice_controller import extract_access_token, get_invoice
 from lib.supabase_client import get_supabase_client
 from models.invoice import InvoiceResponse
 
-router = APIRouter(prefix="/api/v1/orders")
+router = APIRouter(prefix="/orders")
 
 
 @router.get("/{order_id}/invoice", response_model=InvoiceResponse)

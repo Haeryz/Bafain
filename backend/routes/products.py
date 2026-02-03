@@ -7,7 +7,7 @@ from controllers.product_controller import (
   list_products,
   update_product,
 )
-from lib.supabase_client import get_supabase_client
+from lib.firestore_client import get_firestore_client
 from models.product import ProductCreateRequest, ProductResponse, ProductUpdateRequest
 
 router = APIRouter()
@@ -15,7 +15,7 @@ router = APIRouter()
 
 @router.get("", response_model=list[ProductResponse])
 def list_products_route(
-  supabase=Depends(get_supabase_client),
+  firestore=Depends(get_firestore_client),
   limit: int = Query(50, ge=1, le=200),
   offset: int = Query(0, ge=0),
   q: str | None = None,
@@ -26,7 +26,7 @@ def list_products_route(
   spec_value: str | None = None,
 ):
   return list_products(
-    supabase,
+    firestore,
     limit,
     offset,
     query_text=q,
@@ -39,26 +39,26 @@ def list_products_route(
 
 
 @router.get("/{product_id}", response_model=ProductResponse)
-def get_product_route(product_id: str, supabase=Depends(get_supabase_client)):
-  return get_product(supabase, product_id)
+def get_product_route(product_id: str, firestore=Depends(get_firestore_client)):
+  return get_product(firestore, product_id)
 
 
 @router.post("", response_model=ProductResponse, status_code=201)
 def create_product_route(
-  payload: ProductCreateRequest, supabase=Depends(get_supabase_client)
+  payload: ProductCreateRequest, firestore=Depends(get_firestore_client)
 ):
-  return create_product(supabase, payload)
+  return create_product(firestore, payload)
 
 
 @router.put("/{product_id}", response_model=ProductResponse)
 def update_product_route(
   product_id: str,
   payload: ProductUpdateRequest,
-  supabase=Depends(get_supabase_client),
+  firestore=Depends(get_firestore_client),
 ):
-  return update_product(supabase, product_id, payload)
+  return update_product(firestore, product_id, payload)
 
 
 @router.delete("/{product_id}")
-def delete_product_route(product_id: str, supabase=Depends(get_supabase_client)):
-  return delete_product(supabase, product_id)
+def delete_product_route(product_id: str, firestore=Depends(get_firestore_client)):
+  return delete_product(firestore, product_id)

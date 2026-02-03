@@ -1,27 +1,8 @@
-import { useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import PageLayout from "@/components/PageLayout"
-import { Link } from "react-router-dom"
-
-const shippingOptions = [
-  {
-    id: "standar",
-    title: "Pengiriman Standar",
-    detail: "3 - 5 hari kerja",
-    price: "Rp 50.000",
-  },
-  {
-    id: "ekspres",
-    title: "Pengiriman Ekspres",
-    detail: "1 - 2 hari kerja",
-    price: "Rp 150.000",
-  },
-  {
-    id: "premium",
-    title: "Pengiriman Premium",
-    detail: "Pengiriman hari berikutnya",
-    price: "Rp 150.000",
-  },
-]
+import { useNavigate } from "react-router-dom"
+import { useCartStore } from "@/stores/cart/useCartStore"
+import { useCheckoutStore } from "@/stores/checkout/useCheckoutStore"
 
 const paymentMethods = [
   { id: "bca", label: "BCA Virtual Account" },
@@ -32,17 +13,82 @@ const paymentMethods = [
   { id: "bsi", label: "BSI Virtual Account" },
 ]
 
+const fallbackSummaryItems = [
+  { id: "fallback-item", title: "Solar Dryer", qty: 1, price_idr: 500000 },
+]
+
+const fallbackSubtotal = 500000
+
+const formatIdr = (value: number) =>
+  `Rp ${value.toLocaleString("id-ID")}`
+
 export function Pemesanan() {
-  const [selectedShipping, setSelectedShipping] = useState("standar")
-  const [selectedPayment, setSelectedPayment] = useState(
-    () => window.localStorage.getItem("bafain:paymentMethod") || "bca"
-  )
+  const navigate = useNavigate()
   const [showAllPayments, setShowAllPayments] = useState(false)
+  const { items, subtotal, isLoading, error, loadCart } = useCartStore()
+  const {
+    customer,
+    paymentMethod,
+    shippingOptions,
+    selectedShippingId,
+    summary,
+    isLoading: isCheckoutLoading,
+    error: checkoutError,
+    updateCustomerField,
+    setPaymentMethod,
+    setShippingOption,
+    loadShippingOptions,
+    calculateSummary,
+    placeOrder,
+  } = useCheckoutStore()
+
+  useEffect(() => {
+    loadCart()
+  }, [loadCart])
+
+  useEffect(() => {
+    loadShippingOptions()
+  }, [loadShippingOptions])
+
+  useEffect(() => {
+    calculateSummary()
+  }, [selectedShippingId, subtotal, calculateSummary])
+
+  const cartSummaryItems = useMemo(
+    () =>
+      items.map((item) => ({
+        id: item.id,
+        title: item.product?.title || "Produk",
+        qty: item.qty,
+        price_idr: item.product?.price_idr ?? 0,
+      })),
+    [items]
+  )
+
+  const summaryItems =
+    cartSummaryItems.length > 0 ? cartSummaryItems : fallbackSummaryItems
+  const cartSubtotal =
+    cartSummaryItems.length > 0 ? subtotal : fallbackSubtotal
+
+  const activeShipping =
+    shippingOptions.find((option) => option.id === selectedShippingId) ||
+    shippingOptions[0]
+  const shippingCost = activeShipping?.price_value ?? 0
+  const totalCost = summary?.total ?? cartSubtotal + shippingCost
 
   const handlePaymentChange = (methodId: string, methodLabel: string) => {
-    setSelectedPayment(methodId)
-    window.localStorage.setItem("bafain:paymentMethod", methodId)
-    window.localStorage.setItem("bafain:paymentLabel", methodLabel)
+    setPaymentMethod({ id: methodId, label: methodLabel })
+  }
+
+  const handleShippingChange = (methodId: string) => {
+    setShippingOption(methodId)
+  }
+
+  const handlePlaceOrder = async () => {
+    const orderId = await placeOrder()
+    if (orderId) {
+      navigate("/pembayaran")
+    }
   }
 
   return (
@@ -80,6 +126,10 @@ export function Pemesanan() {
                     <input
                       type="text"
                       placeholder="John Doe"
+                      value={customer.full_name}
+                      onChange={(event) =>
+                        updateCustomerField("full_name", event.target.value)
+                      }
                       className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-blue-500"
                     />
                   </div>
@@ -90,6 +140,10 @@ export function Pemesanan() {
                     <input
                       type="tel"
                       placeholder="+62 812 3456 7890"
+                      value={customer.phone}
+                      onChange={(event) =>
+                        updateCustomerField("phone", event.target.value)
+                      }
                       className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-blue-500"
                     />
                   </div>
@@ -102,6 +156,10 @@ export function Pemesanan() {
                   <input
                     type="email"
                     placeholder="john.doe@example.com"
+                    value={customer.email}
+                    onChange={(event) =>
+                      updateCustomerField("email", event.target.value)
+                    }
                     className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-blue-500"
                   />
                 </div>
@@ -113,6 +171,10 @@ export function Pemesanan() {
                   <textarea
                     rows={3}
                     placeholder="Jl. Merdeka No. 10, Jakarta Pusat, DKI Jakarta, 10110"
+                    value={customer.address}
+                    onChange={(event) =>
+                      updateCustomerField("address", event.target.value)
+                    }
                     className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-blue-500"
                   />
                 </div>
@@ -125,6 +187,10 @@ export function Pemesanan() {
                     <input
                       type="text"
                       placeholder="Jakarta"
+                      value={customer.city}
+                      onChange={(event) =>
+                        updateCustomerField("city", event.target.value)
+                      }
                       className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-blue-500"
                     />
                   </div>
@@ -135,6 +201,10 @@ export function Pemesanan() {
                     <input
                       type="text"
                       placeholder="10110"
+                      value={customer.postal_code}
+                      onChange={(event) =>
+                        updateCustomerField("postal_code", event.target.value)
+                      }
                       className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-blue-500"
                     />
                   </div>
@@ -147,6 +217,10 @@ export function Pemesanan() {
                   <input
                     type="text"
                     placeholder="DKI Jakarta"
+                    value={customer.province}
+                    onChange={(event) =>
+                      updateCustomerField("province", event.target.value)
+                    }
                     className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-blue-500"
                   />
                 </div>
@@ -159,12 +233,12 @@ export function Pemesanan() {
               </h2>
               <div className="mt-6 space-y-4 text-sm text-slate-700">
                 {shippingOptions.map((option) => {
-                  const isActive = selectedShipping === option.id
+                  const isActive = selectedShippingId === option.id
                   return (
                     <button
                       key={option.id}
                       type="button"
-                      onClick={() => setSelectedShipping(option.id)}
+                      onClick={() => handleShippingChange(option.id)}
                       className={`flex w-full cursor-pointer items-center justify-between rounded-xl border px-4 py-4 text-left transition ${
                         isActive
                           ? "border-blue-500 bg-blue-50/40"
@@ -193,7 +267,7 @@ export function Pemesanan() {
                         </div>
                       </div>
                       <p className="text-sm font-semibold text-slate-900">
-                        {option.price}
+                        {option.price_label}
                       </p>
                     </button>
                   )
@@ -227,7 +301,7 @@ export function Pemesanan() {
                     ]
                   : paymentMethods
                 ).map((method) => {
-                  const isActive = selectedPayment === method.id
+                  const isActive = paymentMethod.id === method.id
                   return (
                     <button
                       key={method.id}
@@ -270,29 +344,55 @@ export function Pemesanan() {
               Ringkasan Pesanan
             </h2>
             <div className="mt-4 space-y-3 text-sm text-slate-600">
-              <div className="flex items-center justify-between">
-                <span>Solar Dryer</span>
-                <span className="font-semibold text-slate-900">Rp 500.000</span>
-              </div>
+              {isLoading && (
+                <p className="text-xs text-slate-400">Memuat keranjang...</p>
+              )}
+              {error && (
+                <p className="text-xs text-red-500">{error}</p>
+              )}
+              {checkoutError && (
+                <p className="text-xs text-red-500">{checkoutError}</p>
+              )}
+              {summaryItems.map((item) => (
+                <div key={item.id} className="flex items-center justify-between">
+                  <span>
+                    {item.title}
+                    <span className="ml-2 text-xs text-slate-400">
+                      x{item.qty}
+                    </span>
+                  </span>
+                  <span className="font-semibold text-slate-900">
+                    {formatIdr(item.price_idr * item.qty)}
+                  </span>
+                </div>
+              ))}
               <div className="flex items-center justify-between">
                 <span>Subtotal</span>
-                <span className="font-semibold text-slate-900">Rp 500.000</span>
+                <span className="font-semibold text-slate-900">
+                  {formatIdr(summary?.subtotal ?? cartSubtotal)}
+                </span>
               </div>
               <div className="flex items-center justify-between border-b border-slate-200 pb-3">
                 <span>Pengiriman</span>
-                <span className="font-semibold text-slate-900">Rp 50.000</span>
+                <span className="font-semibold text-slate-900">
+                  {formatIdr(summary?.shipping_fee ?? shippingCost)}
+                </span>
               </div>
               <div className="flex items-center justify-between pt-2 text-base font-semibold text-slate-900">
                 <span>Total</span>
-                <span className="text-orange-500">Rp 550.000</span>
+                <span className="text-orange-500">
+                  {formatIdr(totalCost)}
+                </span>
               </div>
             </div>
-            <Link
-              to="/pembayaran"
-              className="mt-6 inline-flex w-full cursor-pointer items-center justify-center rounded-xl bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
+            <button
+              type="button"
+              onClick={handlePlaceOrder}
+              disabled={isCheckoutLoading}
+              className="mt-6 inline-flex w-full cursor-pointer items-center justify-center rounded-xl bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-70"
             >
-              Bayar Sekarang
-            </Link>
+              {isCheckoutLoading ? "Memproses..." : "Bayar Sekarang"}
+            </button>
           </div>
         </div>
       </section>

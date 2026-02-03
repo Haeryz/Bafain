@@ -1,19 +1,22 @@
+import { useEffect, useMemo } from "react"
 import { CheckCircle2 } from "lucide-react"
-import { Link } from "react-router-dom"
+import { Link, useParams } from "react-router-dom"
 import PageLayout from "@/components/PageLayout"
+import { useProductsStore } from "@/stores/products/useProductsStore"
+import { useCartStore } from "@/stores/cart/useCartStore"
 
-const productFeatures = [
+const fallbackFeatures = [
   "Pengeringan Efisien",
   "Proses Higienis",
   "Ramah Lingkungan",
   "Kapasitas Besar",
 ]
 
-const specs = [
+const fallbackSpecs = [
   { label: "Kapasitas Pengeringan", value: "500 - 1000 kg" },
   { label: "Sumber Energi", value: "Tenaga Surya & Pemanas Cadangan" },
   { label: "Bahan Konstruksi", value: "Stainless Steel Food Grade" },
-  { label: "Suhu Operasional", value: "40°C - 70°C (Dapat Diatur)" },
+  { label: "Suhu Operasional", value: "40 C - 70 C (Dapat Diatur)" },
   {
     label: "Kontrol",
     value: "Digital Otomatis dengan Sensor Suhu & Kelembaban",
@@ -29,7 +32,7 @@ const specs = [
   { label: "Sistem Sirkulasi Udara", value: "Ventilasi Paksa (Forced Convection)" },
 ]
 
-const benefits = [
+const fallbackBenefits = [
   {
     title: "Efisiensi Energi Tinggi",
     description:
@@ -52,56 +55,135 @@ const benefits = [
   },
 ]
 
-const galleryItems = [
+const fallbackGallery = [
   {
     title: "Instalasi Panel Surya",
     description:
       "Teknisi memastikan panel surya terpasang optimal untuk penyerapan energi maksimal.",
+    image_url: "/hero-team.svg",
   },
   {
     title: "Kontrol Digital",
     description:
       "Panel kontrol memantau suhu dan kelembapan secara real-time untuk hasil konsisten.",
+    image_url: "/hero-team.svg",
   },
   {
     title: "Ruang Pengering Higienis",
     description:
       "Ruang pengering tertutup menjaga kualitas udang tetap bersih dan aman.",
+    image_url: "/hero-team.svg",
   },
 ]
 
 export function Produk() {
+  const { productId } = useParams<{ productId?: string }>()
+  const { products, currentProduct, isLoading, error, loadProducts, loadProduct } =
+    useProductsStore()
+  const { addItem } = useCartStore()
+
+  useEffect(() => {
+    if (productId) {
+      loadProduct(productId)
+    } else {
+      loadProducts({ limit: 1 })
+    }
+  }, [productId, loadProduct, loadProducts])
+
+  const product = productId ? currentProduct : products[0]
+
+  const productFeatures = useMemo(() => {
+    if (!product?.product_features?.length) return fallbackFeatures
+    return product.product_features.map((f) => f.feature)
+  }, [product])
+
+  const specs = useMemo(() => {
+    if (!product?.product_specs?.length) return fallbackSpecs
+    return product.product_specs.map((s) => ({
+      label: s.spec_key,
+      value: s.spec_value || "-",
+    }))
+  }, [product])
+
+  const benefits = useMemo(() => {
+    if (!product?.product_benefits?.length) return fallbackBenefits
+    return product.product_benefits.map((b) => ({
+      title: b.title,
+      description: b.description || "",
+    }))
+  }, [product])
+
+  const galleryItems = useMemo(() => {
+    if (!product?.product_gallery?.length) return fallbackGallery
+    return product.product_gallery.map((g) => ({
+      title: g.title,
+      description: g.description || "",
+      image_url: g.image_url,
+    }))
+  }, [product])
+
+  const title = product?.title || "Solar Dryer Pengeringan Udang Tenaga Surya"
+  const price = product?.price_idr
+    ? `Rp ${product.price_idr.toLocaleString("id-ID")}${product.price_unit ? `/${product.price_unit}` : ""}`
+    : "Rp 500.000/panel"
+  const description =
+    product?.description ||
+    "Pengering Udang Tenaga Surya kami adalah terobosan dalam pengolahan hasil laut, menawarkan efisiensi tanpa banding, higienis, dan ramah lingkungan. Optimalkan kualitas produk dan kurangi biaya operasional Anda dengan teknologi terdepan."
+  const imageUrl = product?.image_url || "/hero-team.svg"
+  const handleOrderNow = () => {
+    if (product?.id) {
+      addItem(product.id, 1)
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <PageLayout>
+        <section className="mx-auto w-full max-w-6xl px-6 py-20 text-center">
+          <p className="text-slate-500">Memuat produk...</p>
+        </section>
+      </PageLayout>
+    )
+  }
+
+  if (error) {
+    return (
+      <PageLayout>
+        <section className="mx-auto w-full max-w-6xl px-6 py-20 text-center">
+          <p className="text-red-500">{error}</p>
+        </section>
+      </PageLayout>
+    )
+  }
+
   return (
     <PageLayout>
       <section className="mx-auto w-full max-w-6xl px-6 pb-16 pt-12 md:pb-20 md:pt-16">
         <div className="grid items-center gap-10 md:grid-cols-[1.05fr_0.95fr]">
           <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-md">
             <img
-              src="/hero-team.svg"
-              alt="Solar dryer tenaga surya"
+              src={imageUrl}
+              alt={title}
               className="h-full w-full object-cover"
             />
           </div>
           <div>
             <h1 className="font-['Sora'] text-3xl font-semibold text-slate-900 md:text-4xl">
-              Solar Dryer Pengeringan Udang Tenaga Surya
+              {title}
             </h1>
             <p className="mt-3 text-lg font-semibold text-blue-600">
-              Rp 500.000/panel
+              {price}
             </p>
             <p className="mt-4 text-sm leading-relaxed text-slate-600">
-              Pengering Udang Tenaga Surya kami adalah terobosan dalam pengolahan
-              hasil laut, menawarkan efisiensi tanpa banding, higienis, dan
-              ramah lingkungan. Optimalkan kualitas produk dan kurangi biaya
-              operasional Anda dengan teknologi terdepan.
+              {description}
             </p>
 
             <div className="mt-6">
               <p className="text-sm font-semibold text-slate-900">Fitur Utama</p>
               <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                {productFeatures.map((feature) => (
+                {productFeatures.map((feature, index) => (
                   <div
-                    key={feature}
+                    key={`${feature}-${index}`}
                     className="flex items-center gap-2 text-sm text-slate-600"
                   >
                     <CheckCircle2 className="h-4 w-4 text-orange-500" />
@@ -113,6 +195,7 @@ export function Produk() {
 
             <Link
               to="/pemesanan"
+              onClick={handleOrderNow}
               className="mt-8 inline-flex rounded-full bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
             >
               Pesan Sekarang
@@ -142,7 +225,7 @@ export function Produk() {
               </div>
               {specs.map((spec, index) => (
                 <div
-                  key={spec.label}
+                  key={`${spec.label}-${index}`}
                   className={`grid grid-cols-[1.1fr_1.3fr] gap-4 px-6 py-3 text-sm text-slate-600 ${
                     index % 2 === 0 ? "bg-white" : "bg-slate-50"
                   }`}
@@ -164,9 +247,9 @@ export function Produk() {
             Manfaat Utama untuk Produsen Udang
           </h2>
           <div className="mt-10 grid gap-6 md:grid-cols-3">
-            {benefits.map((benefit) => (
+            {benefits.map((benefit, index) => (
               <div
-                key={benefit.title}
+                key={`${benefit.title}-${index}`}
                 className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md"
               >
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-orange-50 text-orange-500">
@@ -190,13 +273,13 @@ export function Produk() {
             Foto Instalasi Nyata
           </h2>
           <div className="mt-10 grid gap-6 md:grid-cols-3">
-            {galleryItems.map((item) => (
+            {galleryItems.map((item, index) => (
               <div
-                key={item.title}
+                key={`${item.title}-${index}`}
                 className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-md"
               >
                 <img
-                  src="/hero-team.svg"
+                  src={item.image_url}
                   alt={item.title}
                   className="h-44 w-full object-cover"
                 />

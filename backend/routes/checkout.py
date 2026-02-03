@@ -13,7 +13,7 @@ from models.checkout import (
   SelectShippingResponse,
 )
 
-router = APIRouter(prefix="/api/v1/checkout")
+router = APIRouter(prefix="/checkout")
 
 
 @router.post("/summary", response_model=CheckoutSummaryResponse)

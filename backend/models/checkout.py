@@ -6,6 +6,7 @@ from pydantic import BaseModel
 class CheckoutSummaryRequest(BaseModel):
   address: Optional[dict[str, Any]] = None
   shipping_option: Optional[dict[str, Any]] = None
+  subtotal: Optional[int] = None
 
 
 class CheckoutSummaryResponse(BaseModel):

@@ -44,9 +44,24 @@ def _get_user(access_token: str, supabase: Client):
 
 def _default_options() -> list[ShippingOption]:
   return [
-    ShippingOption(id="standard", name="Standard", price=15000, eta_text="2-3 hari"),
-    ShippingOption(id="express", name="Express", price=30000, eta_text="1-2 hari"),
-    ShippingOption(id="premium", name="Premium", price=50000, eta_text="0-1 hari"),
+    ShippingOption(
+      id="standar",
+      name="Pengiriman Standar",
+      price=50000,
+      eta_text="3 - 5 hari kerja",
+    ),
+    ShippingOption(
+      id="ekspres",
+      name="Pengiriman Ekspres",
+      price=150000,
+      eta_text="1 - 2 hari kerja",
+    ),
+    ShippingOption(
+      id="premium",
+      name="Pengiriman Premium",
+      price=150000,
+      eta_text="Pengiriman hari berikutnya",
+    ),
   ]
 
 

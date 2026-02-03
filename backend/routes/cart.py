@@ -16,7 +16,7 @@ from models.cart import (
   CartResponse,
 )
 
-router = APIRouter(prefix="/api/v1/cart")
+router = APIRouter(prefix="/cart")
 
 
 @router.get("", response_model=CartResponse)

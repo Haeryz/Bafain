@@ -22,6 +22,19 @@ class ProductSpecInput(BaseModel):
   sort_order: int = 0
 
 
+class ProductBenefitInput(BaseModel):
+  title: str = Field(min_length=1, max_length=300)
+  description: Optional[str] = None
+  sort_order: int = 0
+
+
+class ProductGalleryInput(BaseModel):
+  title: str = Field(min_length=1, max_length=300)
+  description: Optional[str] = None
+  image_url: str = Field(min_length=1, max_length=2000)
+  sort_order: int = 0
+
+
 class ProductCreateRequest(BaseModel):
   title: str = Field(min_length=1, max_length=300)
   price_idr: int = Field(ge=0)
@@ -31,6 +44,8 @@ class ProductCreateRequest(BaseModel):
   images: list[ProductImageInput] = []
   features: list[ProductFeatureInput] = []
   specs: list[ProductSpecInput] = []
+  benefits: list[ProductBenefitInput] = []
+  gallery: list[ProductGalleryInput] = []
 
 
 class ProductUpdateRequest(BaseModel):
@@ -42,6 +57,8 @@ class ProductUpdateRequest(BaseModel):
   images: Optional[list[ProductImageInput]] = None
   features: Optional[list[ProductFeatureInput]] = None
   specs: Optional[list[ProductSpecInput]] = None
+  benefits: Optional[list[ProductBenefitInput]] = None
+  gallery: Optional[list[ProductGalleryInput]] = None
 
 
 class ProductImage(BaseModel):
@@ -69,6 +86,23 @@ class ProductSpec(BaseModel):
   sort_order: int
 
 
+class ProductBenefit(BaseModel):
+  id: str
+  product_id: str
+  title: str
+  description: Optional[str] = None
+  sort_order: int
+
+
+class ProductGallery(BaseModel):
+  id: str
+  product_id: str
+  title: str
+  description: Optional[str] = None
+  image_url: str
+  sort_order: int
+
+
 class ProductResponse(BaseModel):
   id: str
   title: str
@@ -80,3 +114,5 @@ class ProductResponse(BaseModel):
   product_images: list[ProductImage] = []
   product_features: list[ProductFeature] = []
   product_specs: list[ProductSpec] = []
+  product_benefits: list[ProductBenefit] = []
+  product_gallery: list[ProductGallery] = []

@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, Header, Query
 from controllers.orders_controller import (
   add_order_note,
   cancel_order,
+  check_payment,
   confirm_received,
   create_order,
   extract_access_token,
@@ -20,7 +21,7 @@ from models.orders import (
   OrderResponse,
 )
 
-router = APIRouter(prefix="/api/v1/orders")
+router = APIRouter(prefix="/orders")
 
 
 @router.post("", response_model=OrderResponse, status_code=201)
@@ -74,6 +75,16 @@ def confirm_received_route(
 ):
   access_token = extract_access_token(authorization)
   return confirm_received(access_token, order_id, supabase)
+
+
+@router.post("/{order_id}/check-payment", response_model=OrderActionResponse)
+def check_payment_route(
+  order_id: str,
+  authorization: str | None = Header(default=None),
+  supabase=Depends(get_supabase_client),
+):
+  access_token = extract_access_token(authorization)
+  return check_payment(access_token, order_id, supabase)
 
 
 @router.post("/{order_id}/notes", response_model=OrderNotesResponse)

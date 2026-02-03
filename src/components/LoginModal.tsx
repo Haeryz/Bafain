@@ -17,8 +17,6 @@ export function LoginModal({
   onSwitchMode,
   onLoginSuccess,
 }: LoginModalProps) {
-  if (!open) return null
-
   const isRegister = mode === "register"
   const isForgot = mode === "forgot"
   const {
@@ -36,6 +34,8 @@ export function LoginModal({
     register,
     forgot,
   } = useAuthStore()
+
+  if (!open) return null
 
   const activeFeedback = isRegister
     ? feedback.register

@@ -1,5 +1,7 @@
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import PageLayout from "@/components/PageLayout"
+import { useCartStore } from "@/stores/cart/useCartStore"
+import { useCheckoutStore } from "@/stores/checkout/useCheckoutStore"
 
 const paymentSteps = [
   {
@@ -22,10 +24,26 @@ const paymentSteps = [
 export function Pembayaran() {
   const [showCopied, setShowCopied] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
-  const selectedPaymentId =
-    window.localStorage.getItem("bafain:paymentMethod") || "bca"
-  const selectedPaymentLabel =
-    window.localStorage.getItem("bafain:paymentLabel") || "BCA Virtual Account"
+  const { items, subtotal, isLoading, error, loadCart } = useCartStore()
+  const {
+    customer,
+    paymentMethod,
+    summary,
+    orderId,
+    isLoading: isCheckoutLoading,
+    error: checkoutError,
+    loadOrder,
+    checkPaymentStatus,
+  } = useCheckoutStore()
+  const selectedPaymentId = paymentMethod.id
+  const selectedPaymentLabel = paymentMethod.label
+  const selectedShippingLabel =
+    window.localStorage.getItem("bafain:shippingLabel") || "Pengiriman Standar"
+  const selectedShippingDetail =
+    window.localStorage.getItem("bafain:shippingDetail") || "3 - 5 hari kerja"
+  const selectedShippingPrice =
+    summary?.shipping_fee ??
+    Number(window.localStorage.getItem("bafain:shippingPrice") || "50000")
 
   const paymentCodeMap: Record<string, string> = {
     bca: "BCA",
@@ -61,10 +79,51 @@ export function Pembayaran() {
   const vaNumber = vaNumberMap[selectedPaymentId] || "6 8001 08214456789"
 
   useEffect(() => {
+    loadCart()
+  }, [loadCart])
+
+  useEffect(() => {
+    if (orderId) {
+      loadOrder(orderId)
+    }
+  }, [orderId, loadOrder])
+
+  useEffect(() => {
     if (!showCopied) return
     const timeout = window.setTimeout(() => setShowCopied(false), 2500)
     return () => window.clearTimeout(timeout)
   }, [showCopied])
+
+  const cartSummaryItems = useMemo(
+    () =>
+      items.map((item) => ({
+        id: item.id,
+        title: item.product?.title || "Produk",
+        qty: item.qty,
+        image_url: item.product?.image_url || "/hero-team.svg",
+        price_idr: item.product?.price_idr ?? 0,
+      })),
+    [items]
+  )
+
+  const fallbackItems = [
+    {
+      id: "fallback-item",
+      title: "Solar Dryer",
+      qty: 1,
+      image_url: "/hero-team.svg",
+      price_idr: 500000,
+    },
+  ]
+
+  const summaryItems =
+    cartSummaryItems.length > 0 ? cartSummaryItems : fallbackItems
+  const cartSubtotal =
+    cartSummaryItems.length > 0 ? subtotal : fallbackItems[0].price_idr
+  const totalCost = summary?.total ?? cartSubtotal + selectedShippingPrice
+
+  const formatIdr = (value: number) =>
+    `Rp ${value.toLocaleString("id-ID")}`
 
   const handleCopyVa = async () => {
     try {
@@ -78,6 +137,13 @@ export function Pembayaran() {
       document.body.removeChild(input)
     }
     setShowCopied(true)
+  }
+
+  const handleCheckPayment = async () => {
+    const paid = await checkPaymentStatus()
+    if (paid) {
+      setShowSuccess(true)
+    }
   }
 
   return (
@@ -166,7 +232,7 @@ export function Pembayaran() {
                   Total Pembayaran
                 </p>
                 <div className="mt-2 rounded-xl bg-blue-50 px-4 py-3 text-sm font-semibold text-slate-900">
-                  IDR 550.000
+                  {formatIdr(totalCost)}
                 </div>
               </div>
 
@@ -206,8 +272,9 @@ export function Pembayaran() {
             </p>
             <button
               type="button"
-              onClick={() => setShowSuccess(true)}
-              className="mt-3 w-full cursor-pointer rounded-xl bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-600 transition hover:bg-blue-100"
+              onClick={handleCheckPayment}
+              disabled={isCheckoutLoading}
+              className="mt-3 w-full cursor-pointer rounded-xl bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-600 transition hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-70"
             >
               Cek Status Pembayaran
             </button>
@@ -221,42 +288,57 @@ export function Pembayaran() {
               <div className="flex items-center justify-between">
                 <span>ID Pesanan:</span>
                 <span className="font-semibold text-slate-900">
-                  ORD-20250911-001
+                  {orderId || "ORD-20250911-001"}
                 </span>
               </div>
             </div>
 
-            <div className="mt-4 flex items-center gap-4">
-              <div className="h-12 w-12 overflow-hidden rounded-xl border border-slate-200 bg-slate-100">
-                <img
-                  src="/hero-team.svg"
-                  alt="Solar Dryer"
-                  className="h-full w-full object-cover"
-                />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-slate-900">
-                  Solar Dryer
-                </p>
-                <p className="text-xs text-slate-500">Qty: 1</p>
-              </div>
+            <div className="mt-4 space-y-3">
+              {isLoading && (
+                <p className="text-xs text-slate-400">Memuat keranjang...</p>
+              )}
+              {error && <p className="text-xs text-red-500">{error}</p>}
+              {checkoutError && (
+                <p className="text-xs text-red-500">{checkoutError}</p>
+              )}
+              {summaryItems.map((item) => (
+                <div key={item.id} className="flex items-center gap-4">
+                  <div className="h-12 w-12 overflow-hidden rounded-xl border border-slate-200 bg-slate-100">
+                    <img
+                      src={item.image_url}
+                      alt={item.title}
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900">
+                      {item.title}
+                    </p>
+                    <p className="text-xs text-slate-500">Qty: {item.qty}</p>
+                  </div>
+                </div>
+              ))}
             </div>
 
             <div className="mt-4 space-y-1 text-xs text-slate-600">
-              <p>Nama : John Doe</p>
-              <p>No Tlpn : +62 812 3456 7890</p>
-              <p>Email : john.doe@example.com</p>
+              <p>Nama : {customer.full_name || "John Doe"}</p>
+              <p>No Tlpn : {customer.phone || "+62 812 3456 7890"}</p>
+              <p>Email : {customer.email || "john.doe@example.com"}</p>
               <p>
-                Alamat : Jl. Merdeka No. 10, Jakarta Pusat, DKI Jakarta, 10110
+                Alamat :{" "}
+                {customer.address ||
+                  "Jl. Merdeka No. 10, Jakarta Pusat, DKI Jakarta, 10110"}
               </p>
-              <p>Pengiriman : 3 - 5 Hari Kerja ( Standar )</p>
+              <p>
+                Pengiriman : {selectedShippingDetail} ({selectedShippingLabel})
+              </p>
             </div>
 
             <div className="mt-4 border-t border-slate-200 pt-4">
               <div className="flex items-center justify-between text-sm text-slate-700">
                 <span>Total Pembayaran</span>
                 <span className="text-base font-semibold text-orange-500">
-                  Rp 550.000
+                  {formatIdr(totalCost)}
                 </span>
               </div>
             </div>

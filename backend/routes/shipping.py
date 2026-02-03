@@ -8,7 +8,7 @@ from controllers.shipping_controller import (
 from lib.supabase_client import get_supabase_client
 from models.shipping import ShippingOptionsResponse, ShippingQuoteRequest, ShippingQuoteResponse
 
-router = APIRouter(prefix="/api/v1/shipping")
+router = APIRouter(prefix="/shipping")
 
 
 @router.get("/options", response_model=ShippingOptionsResponse)
