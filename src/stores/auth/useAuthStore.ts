@@ -239,7 +239,7 @@ export const useAuthStore = create<AuthStoreState>((set, get) => ({
         email,
         password: loginForm.password,
       })
-      const email =
+      const responseEmail =
         response.user && typeof response.user.email === "string"
           ? response.user.email
           : loginForm.email
@@ -256,7 +256,7 @@ export const useAuthStore = create<AuthStoreState>((set, get) => ({
           ...state.feedback,
           login: {
             type: "success",
-            message: `Berhasil masuk${email ? `, ${email}` : ""}.`,
+            message: `Berhasil masuk${responseEmail ? `, ${responseEmail}` : ""}.`,
           },
         },
       }))
