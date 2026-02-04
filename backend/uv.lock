@@ -47,7 +47,6 @@ dependencies = [
     { name = "firebase-admin" },
     { name = "python-dotenv" },
     { name = "redis" },
-    { name = "supabase" },
     { name = "uvicorn", extra = ["standard"] },
 ]
 
@@ -57,7 +56,6 @@ requires-dist = [
     { name = "firebase-admin" },
     { name = "python-dotenv" },
     { name = "redis" },
-    { name = "supabase" },
     { name = "uvicorn", extras = ["standard"] },
 ]
 
@@ -1414,52 +1412,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/b3/08/efd28d49162ce89c2ad61a88bd80e11fb77bc9f6c145402589112d38f8af/strictyaml-1.7.3.tar.gz", hash = "sha256:22f854a5fcab42b5ddba8030a0e4be51ca89af0267961c8d6cfa86395586c407", size = 115206, upload-time = "2023-03-10T12:50:27.062Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/96/7c/a81ef5ef10978dd073a854e0fa93b5d8021d0594b639cc8f6453c3c78a1d/strictyaml-1.7.3-py3-none-any.whl", hash = "sha256:fb5c8a4edb43bebb765959e420f9b3978d7f1af88c80606c03fb420888f5d1c7", size = 123917, upload-time = "2023-03-10T12:50:17.242Z" },
-]
-
-[[package]]
-name = "supabase"
-version = "2.27.2"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "httpx" },
-    { name = "postgrest" },
-    { name = "realtime" },
-    { name = "storage3" },
-    { name = "supabase-auth" },
-    { name = "supabase-functions" },
-    { name = "yarl" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/4b/b1/8d2cced5fe7a3045b69398b46cd7a2ab650a4b7fa8ccbf6066516a5dee8c/supabase-2.27.2.tar.gz", hash = "sha256:2aed40e4f3454438822442a1e94a47be6694c2c70392e7ae99b51a226d4293f7", size = 9662, upload-time = "2026-01-14T04:53:42.559Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/07/d8/383d5e14ba03d1829fcd08683dc746c0163c24ffdda9392e984b6de6dc8a/supabase-2.27.2-py3-none-any.whl", hash = "sha256:d4dce00b3a418ee578017ec577c0e5be47a9a636355009c76f20ed2faa15bc54", size = 16601, upload-time = "2026-01-14T04:53:41.482Z" },
-]
-
-[[package]]
-name = "supabase-auth"
-version = "2.27.2"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "httpx", extra = ["http2"] },
-    { name = "pydantic" },
-    { name = "pyjwt", extra = ["crypto"] },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/ea/9f/00befdeb294522f61e8af95bd02d546869debe35131ce774f43e37abd499/supabase_auth-2.27.2.tar.gz", hash = "sha256:0f5bcc79b3677cb42e9d321f3c559070cfa40d6a29a67672cc8382fb7dc2fe97", size = 38825, upload-time = "2026-01-14T04:53:44.723Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/c4/f5/8e5f1eb24bdecdfaa0dc8ac833ef4c501560d63ccd138b154a78e57f5112/supabase_auth-2.27.2-py3-none-any.whl", hash = "sha256:78ec25b11314d0a9527a7205f3b1c72560dccdc11b38392f80297ef98664ee91", size = 48043, upload-time = "2026-01-14T04:53:43.333Z" },
-]
-
-[[package]]
-name = "supabase-functions"
-version = "2.27.2"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "httpx", extra = ["http2"] },
-    { name = "strenum" },
-    { name = "yarl" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/1d/46/a76140672b2d0b12bef8ba99f741736bb1ecbbd22c46ac59e04bec0fd656/supabase_functions-2.27.2.tar.gz", hash = "sha256:d0c8266207a94371cb3fd35ad3c7f025b78a97cf026861e04ccd35ac1775f80b", size = 4525, upload-time = "2026-01-14T04:53:46.529Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/32/08/f8894e24ffc5a99154a8547013a91f0e7b45f409535d3a7491bd7d25e273/supabase_functions-2.27.2-py3-none-any.whl", hash = "sha256:db480efc669d0bca07605b9b6f167312af43121adcc842a111f79bea416ef754", size = 8472, upload-time = "2026-01-14T04:53:45.308Z" },
 ]
 
 [[package]]

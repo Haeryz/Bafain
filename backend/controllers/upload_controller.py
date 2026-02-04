@@ -1,10 +1,12 @@
 import os
 import re
 import uuid
-from typing import Any
+from datetime import timedelta
 
 from fastapi import HTTPException, status
-from supabase import Client
+from firebase_admin import storage
+
+from lib.firebase_admin import init_firebase
 
 from models.upload import SignedUploadRequest
 
@@ -14,30 +16,8 @@ def _slug_filename(filename: str) -> str:
   return clean or f"file_{uuid.uuid4().hex}"
 
 
-def _extract_data(response: Any) -> dict:
-  if response is None:
-    return {}
-  if isinstance(response, dict):
-    return response.get("data", response)
-  data = getattr(response, "data", None)
-  if isinstance(data, dict):
-    return data
-  return {}
-
-
-def _raise_if_error(response: Any):
-  error = getattr(response, "error", None)
-  if error:
-    raise HTTPException(
-      status_code=status.HTTP_502_BAD_GATEWAY,
-      detail=str(error),
-    )
-
-
 def _get_bucket() -> str:
-  bucket = os.getenv("SUPABASE_STORAGE_BUCKET") or os.getenv(
-    "NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET"
-  )
+  bucket = os.getenv("FIREBASE_STORAGE_BUCKET") or os.getenv("GCS_BUCKET")
   if not bucket:
     raise HTTPException(
       status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -46,8 +26,9 @@ def _get_bucket() -> str:
   return bucket
 
 
-def create_signed_upload(payload: SignedUploadRequest, supabase: Client):
-  bucket = _get_bucket()
+def create_signed_upload(payload: SignedUploadRequest):
+  bucket_name = _get_bucket()
+  init_firebase()
   filename = _slug_filename(payload.filename)
   folder = payload.folder.strip("/ ")
 
@@ -56,33 +37,24 @@ def create_signed_upload(payload: SignedUploadRequest, supabase: Client):
   else:
     path = f"{folder}/{uuid.uuid4().hex}_{filename}"
 
-  options = {"upsert": "true"} if payload.upsert else None
-  response = supabase.storage.from_(bucket).create_signed_upload_url(
-    path, options=options
-  )
-  _raise_if_error(response)
+  bucket = storage.bucket(bucket_name)
+  blob = bucket.blob(path)
+  if not payload.upsert and blob.exists():
+    raise HTTPException(
+      status_code=status.HTTP_409_CONFLICT,
+      detail="File already exists",
+    )
 
-  data = _extract_data(response)
-  signed_url = (
-    data.get("signedUrl")
-    or data.get("signed_url")
-    or data.get("signedURL")
-  )
-  token = data.get("token")
-
-  public_url = None
-  public_response = supabase.storage.from_(bucket).get_public_url(path)
-  public_data = _extract_data(public_response)
-  public_url = (
-    public_data.get("publicUrl")
-    or public_data.get("public_url")
-    or public_data.get("publicURL")
+  ttl_minutes = int(os.getenv("FIREBASE_SIGNED_URL_TTL_MINUTES", "15"))
+  signed_url = blob.generate_signed_url(
+    expiration=timedelta(minutes=ttl_minutes),
+    method="PUT",
   )
 
   return {
-    "bucket": bucket,
+    "bucket": bucket_name,
     "path": path,
     "signed_url": signed_url,
-    "token": token,
-    "public_url": public_url,
+    "token": None,
+    "public_url": blob.public_url,
   }

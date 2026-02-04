@@ -50,3 +50,4 @@ export const useProductsStore = create<ProductsStoreState>((set) => ({
 
   clearError: () => set({ error: null }),
 }))
+

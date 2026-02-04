@@ -5,7 +5,7 @@
 - `routes/` defines API routers (e.g., `routes/auth.py`).
 - `controllers/` contains request handlers and orchestration logic.
 - `models/` contains Pydantic models and data shapes.
-- `lib/` holds shared helpers (for example, Supabase client setup).
+- `lib/` holds shared helpers (for example, Firebase admin setup).
 - `middleware/` is reserved for FastAPI middleware.
 - `test/` contains standalone smoke scripts (e.g., `test/auth_smoke.py`).
 - `.env.example` documents required environment variables.
@@ -37,6 +37,6 @@
 
 ## Security & Configuration Tips
 - Never commit real secrets; copy `.env.example` to `.env` locally.
-- Supabase credentials use `SUPABASE_URL` and `SUPABASE_ANON_KEY` (or
-  `NEXT_PUBLIC_*` equivalents). Avoid service-role keys in local envs.
+- Firebase admin credentials use `FIREBASE_CREDENTIALS_JSON` or
+  `FIREBASE_CREDENTIALS_PATH`. Storage uses `FIREBASE_STORAGE_BUCKET`.
 - Redis uses `REDIS_URL` (defaults to `redis://localhost:6379/0`).

@@ -1,11 +1,10 @@
-from fastapi import APIRouter, Depends, Header
+from fastapi import APIRouter, Header
 
 from controllers.checkout_controller import (
   checkout_summary,
-  extract_access_token,
   select_shipping,
 )
-from lib.supabase_client import get_supabase_client
+from lib.firebase_auth import extract_access_token
 from models.checkout import (
   CheckoutSummaryRequest,
   CheckoutSummaryResponse,
@@ -20,17 +19,15 @@ router = APIRouter(prefix="/checkout")
 def checkout_summary_route(
   payload: CheckoutSummaryRequest,
   authorization: str | None = Header(default=None),
-  supabase=Depends(get_supabase_client),
 ):
   access_token = extract_access_token(authorization)
-  return checkout_summary(access_token, payload, supabase)
+  return checkout_summary(access_token, payload)
 
 
 @router.post("/select-shipping", response_model=SelectShippingResponse)
 def select_shipping_route(
   payload: SelectShippingRequest,
   authorization: str | None = Header(default=None),
-  supabase=Depends(get_supabase_client),
 ):
   access_token = extract_access_token(authorization)
-  return select_shipping(access_token, payload, supabase)
+  return select_shipping(access_token, payload)

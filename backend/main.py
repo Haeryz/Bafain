@@ -5,7 +5,6 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import redis
 
-from lib.supabase_client import get_supabase_client
 from routes.auth import router as auth_router
 from routes.addresses import router as addresses_router
 from routes.admin_orders import router as admin_orders_router

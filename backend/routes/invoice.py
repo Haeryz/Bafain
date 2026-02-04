@@ -1,7 +1,7 @@
-from fastapi import APIRouter, Depends, Header
+from fastapi import APIRouter, Header
 
-from controllers.invoice_controller import extract_access_token, get_invoice
-from lib.supabase_client import get_supabase_client
+from controllers.invoice_controller import get_invoice
+from lib.firebase_auth import extract_access_token
 from models.invoice import InvoiceResponse
 
 router = APIRouter(prefix="/orders")
@@ -11,7 +11,6 @@ router = APIRouter(prefix="/orders")
 def get_invoice_route(
   order_id: str,
   authorization: str | None = Header(default=None),
-  supabase=Depends(get_supabase_client),
 ):
   access_token = extract_access_token(authorization)
-  return get_invoice(access_token, order_id, supabase)
+  return get_invoice(access_token, order_id)

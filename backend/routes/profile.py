@@ -1,15 +1,14 @@
 from fastapi import APIRouter, Depends, Header, Query
 
 from controllers.profile_controller import (
-  extract_access_token,
   get_order_stats,
   get_profile,
   get_recent_orders,
   update_avatar,
   update_profile,
 )
+from lib.firebase_auth import extract_access_token
 from lib.firestore_client import get_firestore_client
-from lib.supabase_client import get_supabase_client
 from models.profile import (
   OrderStatsResponse,
   ProfileAvatarRequest,
@@ -55,18 +54,18 @@ def update_me_avatar(
 @router.get("/order-stats", response_model=OrderStatsResponse)
 def order_stats(
   authorization: str | None = Header(default=None),
-  supabase=Depends(get_supabase_client),
+  firestore=Depends(get_firestore_client),
 ):
   access_token = extract_access_token(authorization)
-  return get_order_stats(access_token, supabase)
+  return get_order_stats(access_token, firestore)
 
 
 @router.get("/orders/recent", response_model=RecentOrdersResponse)
 def recent_orders(
   limit: int = Query(default=5, ge=1, le=50),
   authorization: str | None = Header(default=None),
-  supabase=Depends(get_supabase_client),
+  firestore=Depends(get_firestore_client),
 ):
   access_token = extract_access_token(authorization)
-  return get_recent_orders(access_token, supabase, limit)
+  return get_recent_orders(access_token, firestore, limit)
 

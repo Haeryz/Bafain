@@ -7,7 +7,7 @@ from fastapi import HTTPException, status
 from firebase_admin import auth as firebase_auth
 from firebase_admin import firestore
 from google.cloud.firestore_v1 import Client as FirestoreClient
-from supabase import Client as SupabaseClient
+from lib.firebase_admin import init_firebase
 
 from models.profile import ProfileUpdateRequest
 
@@ -16,34 +16,8 @@ logger = logging.getLogger("bafain.profile")
 ORDER_STATUSES = ("in-queue", "aktif", "selesai")
 
 
-def extract_access_token(authorization: str | None) -> str:
-  if not authorization:
-    raise HTTPException(
-      status_code=status.HTTP_401_UNAUTHORIZED,
-      detail="Missing Authorization header",
-    )
-  scheme, _, token = authorization.partition(" ")
-  if scheme.lower() != "bearer" or not token.strip():
-    raise HTTPException(
-      status_code=status.HTTP_401_UNAUTHORIZED,
-      detail="Invalid Authorization header",
-    )
-  return token.strip()
-
-
-def _to_dict(value: Any) -> dict[str, Any] | None:
-  if value is None:
-    return None
-  if isinstance(value, dict):
-    return value
-  if hasattr(value, "model_dump"):
-    return value.model_dump()
-  if hasattr(value, "dict"):
-    return value.dict()
-  return None
-
-
 def _verify_id_token(access_token: str) -> dict[str, Any]:
+  init_firebase()
   try:
     return firebase_auth.verify_id_token(access_token)
   except Exception as exc:
@@ -55,6 +29,7 @@ def _verify_id_token(access_token: str) -> dict[str, Any]:
 
 
 def _get_firebase_user(uid: str):
+  init_firebase()
   try:
     return firebase_auth.get_user(uid)
   except Exception as exc:
@@ -63,25 +38,6 @@ def _get_firebase_user(uid: str):
       status_code=status.HTTP_401_UNAUTHORIZED,
       detail="Invalid or expired token",
     ) from exc
-
-
-def _get_supabase_user(access_token: str, supabase: SupabaseClient):
-  try:
-    response = supabase.auth.get_user(access_token)
-  except Exception as exc:
-    logger.warning("Supabase auth get_user error: %s", str(exc))
-    raise HTTPException(
-      status_code=status.HTTP_401_UNAUTHORIZED,
-      detail="Invalid or expired token",
-    ) from exc
-
-  user = getattr(response, "user", None)
-  if user is None:
-    raise HTTPException(
-      status_code=status.HTTP_401_UNAUTHORIZED,
-      detail="Invalid or expired token",
-    )
-  return user
 
 
 def _profile_collection() -> str:
@@ -257,109 +213,110 @@ def update_avatar(
   return update_profile(access_token, payload, firestore_client)
 
 
-def _resolve_orders_table() -> str | None:
-  table = (os.getenv("SUPABASE_ORDERS_TABLE") or os.getenv("ORDERS_TABLE") or "").strip()
-  return table or None
+def _orders_collection() -> str:
+  return os.getenv("FIRESTORE_ORDERS_COLLECTION") or "orders"
 
 
-def _resolve_orders_columns() -> dict[str, str]:
-  return {
-    "user_id": os.getenv("SUPABASE_ORDERS_USER_COLUMN", "user_id"),
-    "status": os.getenv("SUPABASE_ORDERS_STATUS_COLUMN", "status"),
-    "created_at": os.getenv("SUPABASE_ORDERS_CREATED_AT_COLUMN", "created_at"),
-  }
+def _sanitize_value(value: Any) -> Any:
+  if value is None:
+    return None
+  if isinstance(value, datetime):
+    return value.isoformat()
+  if hasattr(value, "timestamp"):
+    try:
+      ts = value.timestamp()
+      return datetime.fromtimestamp(ts, tz=timezone.utc).isoformat()
+    except Exception:
+      return str(value)
+  if isinstance(value, dict):
+    return {key: _sanitize_value(item) for key, item in value.items()}
+  if isinstance(value, list):
+    return [_sanitize_value(item) for item in value]
+  return value
+
+
+def _order_doc_to_dict(doc) -> dict[str, Any]:
+  data = doc.to_dict() or {}
+  data["id"] = doc.id
+  return _sanitize_value(data)
+
+
+def _normalize_order_status(raw_status: Any) -> str | None:
+  if raw_status is None:
+    return None
+  normalized = str(raw_status).strip().lower().replace("_", "-")
+  if normalized in ("cancelled", "canceled", "dibatalkan", "expired"):
+    return None
+  if normalized in ("selesai", "in-queue", "aktif"):
+    return normalized
+  if normalized in ("awaiting-payment", "waiting-payment", "payment-pending", "pending"):
+    return "in-queue"
+  if normalized in ("diproses", "processing", "paid", "shipped"):
+    return "aktif"
+  return "aktif"
 
 
 def _empty_counts() -> dict[str, int]:
   return {status: 0 for status in ORDER_STATUSES}
 
 
-def _is_missing_table(error: Any) -> bool:
-  message = str(error).lower()
-  return "does not exist" in message or "schema cache" in message
-
-
-def get_order_stats(access_token: str, supabase: SupabaseClient) -> dict[str, Any]:
-  user = _get_supabase_user(access_token, supabase)
-  user_dict = _to_dict(user) or {}
-  user_id = user_dict.get("id")
-  if not user_id:
+def get_order_stats(
+  access_token: str, firestore_client: FirestoreClient
+) -> dict[str, Any]:
+  claims = _verify_id_token(access_token)
+  uid = claims.get("uid") or claims.get("user_id")
+  if not uid:
     raise HTTPException(
       status_code=status.HTTP_401_UNAUTHORIZED,
       detail="Invalid or expired token",
     )
 
-  orders_table = _resolve_orders_table()
-  if not orders_table:
-    logger.warning("Orders table not configured; returning empty stats.")
-    return {"counts": _empty_counts()}
-
-  columns = _resolve_orders_columns()
-  supabase.postgrest.auth(access_token)
-  response = (
-    supabase.table(orders_table)
-    .select(columns["status"])
-    .eq(columns["user_id"], user_id)
-    .execute()
-  )
-  error = getattr(response, "error", None)
-  if error:
-    if _is_missing_table(error):
-      logger.warning("Orders table missing; returning empty stats.")
-      return {"counts": _empty_counts()}
-    raise HTTPException(
-      status_code=status.HTTP_502_BAD_GATEWAY,
-      detail=str(error),
-    )
-
-  data = getattr(response, "data", None) or []
   counts = _empty_counts()
-  for row in data:
-    raw_status = row.get(columns["status"])
-    if raw_status is None:
-      continue
-    normalized = str(raw_status).strip().lower().replace("_", "-")
+  docs = (
+    firestore_client.collection(_orders_collection())
+    .where("user_id", "==", uid)
+    .stream()
+  )
+  for doc in docs:
+    raw_status = (doc.to_dict() or {}).get("status")
+    normalized = _normalize_order_status(raw_status)
     if normalized in counts:
       counts[normalized] += 1
 
   return {"counts": counts}
 
 
+def _sort_key(value: Any) -> float:
+  if value is None:
+    return 0.0
+  if hasattr(value, "timestamp"):
+    try:
+      return float(value.timestamp())
+    except Exception:
+      return 0.0
+  if isinstance(value, datetime):
+    return value.timestamp()
+  return 0.0
+
+
 def get_recent_orders(
-  access_token: str, supabase: SupabaseClient, limit: int
+  access_token: str, firestore_client: FirestoreClient, limit: int
 ) -> dict[str, Any]:
-  user = _get_supabase_user(access_token, supabase)
-  user_dict = _to_dict(user) or {}
-  user_id = user_dict.get("id")
-  if not user_id:
+  claims = _verify_id_token(access_token)
+  uid = claims.get("uid") or claims.get("user_id")
+  if not uid:
     raise HTTPException(
       status_code=status.HTTP_401_UNAUTHORIZED,
       detail="Invalid or expired token",
     )
 
-  orders_table = _resolve_orders_table()
-  if not orders_table:
-    logger.warning("Orders table not configured; returning empty recent orders.")
-    return {"orders": []}
-
-  columns = _resolve_orders_columns()
-  supabase.postgrest.auth(access_token)
-  response = (
-    supabase.table(orders_table)
-    .select("*")
-    .eq(columns["user_id"], user_id)
-    .order(columns["created_at"], desc=True)
-    .range(0, limit - 1)
-    .execute()
+  docs = (
+    firestore_client.collection(_orders_collection())
+    .where("user_id", "==", uid)
+    .stream()
   )
-  error = getattr(response, "error", None)
-  if error:
-    if _is_missing_table(error):
-      logger.warning("Orders table missing; returning empty recent orders.")
-      return {"orders": []}
-    raise HTTPException(
-      status_code=status.HTTP_502_BAD_GATEWAY,
-      detail=str(error),
-    )
-
-  return {"orders": getattr(response, "data", None) or []}
+  orders = [_order_doc_to_dict(doc) for doc in docs]
+  orders.sort(
+    key=lambda order: _sort_key(order.get("created_at")), reverse=True
+  )
+  return {"orders": orders[:limit]}

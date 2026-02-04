@@ -6,7 +6,6 @@ dependencies = [
   "fastapi",
   "firebase-admin",
   "uvicorn[standard]",
-  "supabase",
   "redis",
   "python-dotenv",
 ]
