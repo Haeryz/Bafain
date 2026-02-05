@@ -30,6 +30,7 @@ export function App() {
         <Route path="/beranda" element={<Beranda />} />
         <Route path="/teknologi" element={<Teknologi />} />
         <Route path="/produk" element={<Produk />} />
+        <Route path="/produk/:productId" element={<Produk />} />
         <Route path="/pemesanan" element={<Pemesanan />} />
         <Route path="/pembayaran" element={<Pembayaran />} />
         <Route path="/profile" element={<Profile />} />

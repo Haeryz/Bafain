@@ -1,6 +1,6 @@
 import os
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from fastapi import HTTPException, status
@@ -27,6 +27,25 @@ def _doc_to_dict(doc) -> dict[str, Any]:
   return data
 
 
+def _parse_datetime(value: Any) -> datetime | None:
+  if isinstance(value, datetime):
+    return value
+  if isinstance(value, str):
+    try:
+      return datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except Exception:
+      return None
+  return None
+
+
+def _ensure_utc(value: datetime | None) -> datetime | None:
+  if value is None:
+    return None
+  if value.tzinfo is None:
+    return value.replace(tzinfo=timezone.utc)
+  return value.astimezone(timezone.utc)
+
+
 def _sort_key(value: Any) -> float:
   if value is None:
     return 0.0
@@ -45,6 +64,8 @@ def create_order(
 ) -> OrderResponse:
   user_id = get_user_id(access_token)
   order_id = uuid.uuid4().hex
+  created_at = datetime.now(timezone.utc)
+  expires_at = created_at + timedelta(hours=24)
   subtotal = payload.subtotal or 0
   shipping_fee = payload.shipping_fee or 0
   total = payload.total or (subtotal + shipping_fee)
@@ -62,7 +83,8 @@ def create_order(
     "total": total,
     "currency": "IDR",
     "payment_method": payload.payment_method,
-    "created_at": datetime.utcnow(),
+    "created_at": created_at,
+    "expires_at": expires_at,
   }
   firestore.collection(_orders_collection()).document(order_id).set(
     {k: v for k, v in order.items() if k != "id"}
@@ -188,6 +210,21 @@ def check_payment(
       status_code=status.HTTP_404_NOT_FOUND,
       detail="Order not found",
     )
+  now = datetime.now(timezone.utc)
+  expires_at = _ensure_utc(_parse_datetime(data.get("expires_at")))
+  if expires_at and now > expires_at and data.get("payment_status") != "paid":
+    doc_ref.update(
+      {
+        "status": "expired",
+        "payment_status": "expired",
+        "updated_at": now,
+      }
+    )
+    return {
+      "order_id": order_id,
+      "status": "expired",
+      "message": "Payment expired",
+    }
   status_value = data.get("status", "in-queue")
   if data.get("payment_status") != "paid":
     status_value = "in-queue"
@@ -195,7 +232,7 @@ def check_payment(
       {
         "payment_status": "paid",
         "status": status_value,
-        "updated_at": datetime.utcnow(),
+        "updated_at": now,
       }
     )
   return {

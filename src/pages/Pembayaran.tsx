@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react"
+import { useNavigate } from "react-router-dom"
 import PageLayout from "@/components/PageLayout"
 import { useCartStore } from "@/stores/cart/useCartStore"
 import { useCheckoutStore } from "@/stores/checkout/useCheckoutStore"
@@ -22,18 +23,22 @@ const paymentSteps = [
 ]
 
 export function Pembayaran() {
+  const navigate = useNavigate()
   const [showCopied, setShowCopied] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
+  const [now, setNow] = useState(() => Date.now())
   const { items, subtotal, isLoading, error, loadCart } = useCartStore()
   const {
     customer,
     paymentMethod,
     summary,
     orderId,
+    paymentDeadline,
     isLoading: isCheckoutLoading,
     error: checkoutError,
     loadOrder,
     checkPaymentStatus,
+    clearOrder,
   } = useCheckoutStore()
   const selectedPaymentId = paymentMethod.id
   const selectedPaymentLabel = paymentMethod.label
@@ -89,6 +94,14 @@ export function Pembayaran() {
   }, [orderId, loadOrder])
 
   useEffect(() => {
+    if (!paymentDeadline) return
+    const interval = window.setInterval(() => {
+      setNow(Date.now())
+    }, 1000)
+    return () => window.clearInterval(interval)
+  }, [paymentDeadline])
+
+  useEffect(() => {
     if (!showCopied) return
     const timeout = window.setTimeout(() => setShowCopied(false), 2500)
     return () => window.clearTimeout(timeout)
@@ -125,6 +138,20 @@ export function Pembayaran() {
   const formatIdr = (value: number) =>
     `Rp ${value.toLocaleString("id-ID")}`
 
+  const addressSummary = (() => {
+    const parts = [
+      customer.address,
+      customer.subdistrict && `Subdistrict ${customer.subdistrict}`,
+      customer.district && `District ${customer.district}`,
+      customer.city,
+      customer.province,
+      customer.postal_code,
+      customer.country,
+    ].filter(Boolean)
+    if (parts.length > 0) return parts.join(", ")
+    return "Jl. Merdeka No. 10, Jakarta Pusat, DKI Jakarta, 10110"
+  })()
+
   const handleCopyVa = async () => {
     try {
       await navigator.clipboard.writeText(vaNumber.replace(/\s/g, ""))
@@ -140,11 +167,50 @@ export function Pembayaran() {
   }
 
   const handleCheckPayment = async () => {
+    if (isExpired) {
+      return
+    }
     const paid = await checkPaymentStatus()
     if (paid) {
       setShowSuccess(true)
     }
   }
+
+  const handleRecheckout = () => {
+    clearOrder()
+    navigate("/pemesanan")
+  }
+
+  const formatCountdown = (value: number | null) => {
+    if (value === null) return "-"
+    const totalSeconds = Math.ceil(value / 1000)
+    const hours = Math.floor(totalSeconds / 3600)
+    const minutes = Math.floor((totalSeconds % 3600) / 60)
+    const seconds = totalSeconds % 60
+    const pad = (num: number) => String(num).padStart(2, "0")
+    return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`
+  }
+
+  const deadlineLabel = paymentDeadline
+    ? new Date(paymentDeadline).toLocaleString("id-ID", {
+        weekday: "short",
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        timeZoneName: "short",
+      })
+    : "24 jam sejak pemesanan"
+
+  const remainingMs = useMemo(() => {
+    if (!paymentDeadline) return null
+    const deadlineMs = Date.parse(paymentDeadline)
+    if (Number.isNaN(deadlineMs)) return null
+    return Math.max(0, deadlineMs - now)
+  }, [paymentDeadline, now])
+
+  const isExpired = remainingMs !== null && remainingMs <= 0
 
   return (
     <PageLayout>
@@ -196,7 +262,10 @@ export function Pembayaran() {
               <span className="rounded-full bg-slate-100 px-4 py-2 text-xs text-slate-600">
                 Selesaikan Sebelum
                 <span className="mt-1 block text-sm font-semibold text-slate-900">
-                  Sab,29 Nov 2025, 05.00 WIB
+                  {deadlineLabel}
+                </span>
+                <span className="mt-1 block text-[11px] font-semibold text-slate-500">
+                  Sisa waktu: {formatCountdown(remainingMs)}
                 </span>
               </span>
             </div>
@@ -236,12 +305,20 @@ export function Pembayaran() {
                 </div>
               </div>
 
-              <div className="flex items-start gap-2 rounded-xl bg-red-50 px-4 py-3 text-xs text-red-600">
-                <span className="mt-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full border border-red-300">
+              <div
+                className={`flex items-start gap-2 rounded-xl px-4 py-3 text-xs ${
+                  isExpired
+                    ? "bg-rose-50 text-rose-700"
+                    : "bg-red-50 text-red-600"
+                }`}
+              >
+                <span className="mt-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full border border-current">
                   !
                 </span>
                 <p>
-                  Selesaikan pembayaran ini sebelum melewati batas pembayaran.
+                  {isExpired
+                    ? "Waktu pembayaran sudah habis. Silakan checkout ulang."
+                    : "Selesaikan pembayaran ini sebelum melewati batas pembayaran."}
                 </p>
               </div>
             </div>
@@ -273,11 +350,20 @@ export function Pembayaran() {
             <button
               type="button"
               onClick={handleCheckPayment}
-              disabled={isCheckoutLoading}
+              disabled={isCheckoutLoading || isExpired}
               className="mt-3 w-full cursor-pointer rounded-xl bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-600 transition hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-70"
             >
               Cek Status Pembayaran
             </button>
+            {isExpired && (
+              <button
+                type="button"
+                onClick={handleRecheckout}
+                className="mt-3 w-full cursor-pointer rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
+              >
+                Checkout Ulang
+              </button>
+            )}
           </div>
 
           <div className="h-fit rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -325,10 +411,9 @@ export function Pembayaran() {
               <p>No Tlpn : {customer.phone || "+62 812 3456 7890"}</p>
               <p>Email : {customer.email || "john.doe@example.com"}</p>
               <p>
-                Alamat :{" "}
-                {customer.address ||
-                  "Jl. Merdeka No. 10, Jakarta Pusat, DKI Jakarta, 10110"}
+                Alamat : {addressSummary}
               </p>
+              {customer.notes && <p>Catatan : {customer.notes}</p>}
               <p>
                 Pengiriman : {selectedShippingDetail} ({selectedShippingLabel})
               </p>

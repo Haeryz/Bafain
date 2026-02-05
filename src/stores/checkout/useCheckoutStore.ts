@@ -4,7 +4,12 @@ import {
   selectShipping,
   type CheckoutSummaryResponse,
 } from "@/lib/checkoutApi"
-import { createOrder, getOrder, checkPayment } from "@/lib/ordersApi"
+import {
+  createOrder,
+  getOrder,
+  checkPayment,
+  type OrderPayload,
+} from "@/lib/ordersApi"
 import { getShippingOptions, type ShippingOption } from "@/lib/shippingApi"
 import { useCartStore } from "@/stores/cart/useCartStore"
 import { getAccessToken } from "@/stores/auth/authStorage"
@@ -15,8 +20,12 @@ type CustomerInfo = {
   email: string
   address: string
   city: string
+  district: string
+  subdistrict: string
   postal_code: string
   province: string
+  country: string
+  notes: string
 }
 
 type PaymentMethod = {
@@ -41,6 +50,7 @@ type CheckoutStoreState = {
   orderId: string | null
   orderStatus: string | null
   paymentStatus: string | null
+  paymentDeadline: string | null
   isLoading: boolean
   error: string | null
   updateCustomerField: (field: keyof CustomerInfo, value: string) => void
@@ -51,6 +61,7 @@ type CheckoutStoreState = {
   placeOrder: () => Promise<string | null>
   loadOrder: (orderId: string) => Promise<void>
   checkPaymentStatus: () => Promise<boolean>
+  clearOrder: () => void
   clearError: () => void
 }
 
@@ -94,6 +105,11 @@ const getStoredSummary = () => {
   }
 }
 
+const getStoredDeadline = () => {
+  if (typeof window === "undefined") return null
+  return window.localStorage.getItem("bafain:paymentDeadline")
+}
+
 const formatIdr = (value: number) =>
   `Rp ${value.toLocaleString("id-ID")}`
 
@@ -113,7 +129,32 @@ const buildAddressPayload = (customer: CustomerInfo) => ({
   city: customer.city,
   postal_code: customer.postal_code,
   province: customer.province,
+  country: customer.country,
+  notes: customer.notes,
+  metadata: {
+    district: customer.district,
+    subdistrict: customer.subdistrict,
+  },
 })
+
+const resolvePaymentDeadline = (order?: OrderPayload | null) => {
+  const expiresAt =
+    typeof order?.expires_at === "string" ? order.expires_at : null
+  if (expiresAt) return expiresAt
+  const createdAt =
+    typeof order?.created_at === "string" ? order.created_at : null
+  if (!createdAt) return null
+  const createdMs = Date.parse(createdAt)
+  if (Number.isNaN(createdMs)) return null
+  return new Date(createdMs + 24 * 60 * 60 * 1000).toISOString()
+}
+
+const isDeadlineExpired = (deadline: string | null) => {
+  if (!deadline) return false
+  const deadlineMs = Date.parse(deadline)
+  if (Number.isNaN(deadlineMs)) return false
+  return Date.now() > deadlineMs
+}
 
 export const useCheckoutStore = create<CheckoutStoreState>((set, get) => ({
   customer: {
@@ -122,8 +163,12 @@ export const useCheckoutStore = create<CheckoutStoreState>((set, get) => ({
     email: "",
     address: "",
     city: "",
+    district: "",
+    subdistrict: "",
     postal_code: "",
     province: "",
+    country: "Indonesia",
+    notes: "",
   },
   paymentMethod: {
     id: getStoredValue("bafain:paymentMethod", "bca"),
@@ -135,6 +180,7 @@ export const useCheckoutStore = create<CheckoutStoreState>((set, get) => ({
   orderId: getStoredValue("bafain:orderId", "") || null,
   orderStatus: null,
   paymentStatus: null,
+  paymentDeadline: getStoredDeadline(),
   isLoading: false,
   error: null,
 
@@ -324,13 +370,18 @@ export const useCheckoutStore = create<CheckoutStoreState>((set, get) => ({
         payment_method: get().paymentMethod,
       })
       const orderId = response.order?.id || null
+      const deadline = resolvePaymentDeadline(response.order)
       if (orderId && typeof window !== "undefined") {
         window.localStorage.setItem("bafain:orderId", orderId)
+      }
+      if (deadline && typeof window !== "undefined") {
+        window.localStorage.setItem("bafain:paymentDeadline", deadline)
       }
       set({
         orderId,
         orderStatus: response.order?.status ?? null,
         paymentStatus: response.order?.payment_status ?? null,
+        paymentDeadline: deadline ?? get().paymentDeadline,
         isLoading: false,
       })
       return orderId
@@ -356,10 +407,16 @@ export const useCheckoutStore = create<CheckoutStoreState>((set, get) => ({
     }
     try {
       const response = await getOrder(orderId)
+      const deadline =
+        resolvePaymentDeadline(response.order) || get().paymentDeadline
+      if (deadline && typeof window !== "undefined") {
+        window.localStorage.setItem("bafain:paymentDeadline", deadline)
+      }
       set({
         orderId: response.order?.id || orderId,
         orderStatus: response.order?.status ?? null,
         paymentStatus: response.order?.payment_status ?? null,
+        paymentDeadline: deadline,
         isLoading: false,
       })
     } catch (err) {
@@ -379,6 +436,12 @@ export const useCheckoutStore = create<CheckoutStoreState>((set, get) => ({
       set({ error: "Pesanan belum tersedia." })
       return false
     }
+    if (isDeadlineExpired(get().paymentDeadline)) {
+      set({
+        error: "Waktu pembayaran sudah habis. Silakan checkout ulang.",
+      })
+      return false
+    }
     set({ isLoading: true, error: null })
     const token = getAccessToken()
     if (!token) {
@@ -392,9 +455,15 @@ export const useCheckoutStore = create<CheckoutStoreState>((set, get) => ({
       const response = await checkPayment(orderId)
       set({
         orderStatus: response.status,
-        paymentStatus: "paid",
+        paymentStatus: response.status === "expired" ? "expired" : "paid",
         isLoading: false,
       })
+      if (response.status === "expired") {
+        set({
+          error: "Waktu pembayaran sudah habis. Silakan checkout ulang.",
+        })
+        return false
+      }
       return true
     } catch (err) {
       set({
@@ -406,6 +475,20 @@ export const useCheckoutStore = create<CheckoutStoreState>((set, get) => ({
       })
       return false
     }
+  },
+
+  clearOrder: () => {
+    if (typeof window !== "undefined") {
+      window.localStorage.removeItem("bafain:orderId")
+      window.localStorage.removeItem("bafain:checkoutSummary")
+      window.localStorage.removeItem("bafain:paymentDeadline")
+    }
+    set({
+      orderId: null,
+      orderStatus: null,
+      paymentStatus: null,
+      paymentDeadline: null,
+    })
   },
 
   clearError: () => set({ error: null }),

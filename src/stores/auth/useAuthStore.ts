@@ -328,25 +328,31 @@ export const useAuthStore = create<AuthStoreState>((set, get) => ({
           : {}),
       }
       const response = await registerUser(payload)
-      const session = response.session ?? null
-      const user = response.user ?? null
-      const tokens = extractTokens(session)
-      storeAuthSession(session, user)
+      clearAuthStorage()
       set((state) => ({
-        isLoggedIn: Boolean(tokens.accessToken),
-        user,
-        session,
+        activeTab: "masuk",
+        isLoggedIn: false,
+        user: null,
+        session: null,
+        loginForm: {
+          email: "",
+          password: "",
+        },
         registerForm: {
-          ...state.registerForm,
+          name: "",
+          email: "",
           password: "",
           confirmPassword: "",
+          phone: "",
         },
         feedback: {
           ...state.feedback,
-          register: {
+          login: {
             type: "success",
-            message: response?.message || "Registrasi berhasil.",
+            message:
+              response?.message || "Registrasi berhasil. Silakan masuk.",
           },
+          register: null,
         },
       }))
       return true

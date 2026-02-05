@@ -77,6 +77,8 @@ export type OrderPayload = {
   id: string
   status?: string | null
   payment_status?: string | null
+  created_at?: string | null
+  expires_at?: string | null
   address?: Record<string, unknown> | null
   shipping_option?: Record<string, unknown> | null
   customer_note?: string | null

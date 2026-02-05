@@ -3,6 +3,11 @@ import PageLayout from "@/components/PageLayout"
 import { useNavigate } from "react-router-dom"
 import { useCartStore } from "@/stores/cart/useCartStore"
 import { useCheckoutStore } from "@/stores/checkout/useCheckoutStore"
+import {
+  fetchCountryOptions,
+  getCountryOptions,
+  type CountryOption,
+} from "@/lib/countries"
 
 const paymentMethods = [
   { id: "bca", label: "BCA Virtual Account" },
@@ -69,6 +74,23 @@ export function Pemesanan() {
     cartSummaryItems.length > 0 ? cartSummaryItems : fallbackSummaryItems
   const cartSubtotal =
     cartSummaryItems.length > 0 ? subtotal : fallbackSubtotal
+  const [countryOptions, setCountryOptions] = useState<CountryOption[]>(() =>
+    getCountryOptions()
+  )
+
+  useEffect(() => {
+    let isActive = true
+
+    fetchCountryOptions().then((options) => {
+      if (isActive) {
+        setCountryOptions(options)
+      }
+    })
+
+    return () => {
+      isActive = false
+    }
+  }, [])
 
   const activeShipping =
     shippingOptions.find((option) => option.id === selectedShippingId) ||
@@ -164,25 +186,45 @@ export function Pemesanan() {
                   />
                 </div>
 
-                <div>
-                  <label className="text-xs font-semibold text-slate-600">
-                    Alamat
-                  </label>
-                  <textarea
-                    rows={3}
-                    placeholder="Jl. Merdeka No. 10, Jakarta Pusat, DKI Jakarta, 10110"
-                    value={customer.address}
-                    onChange={(event) =>
-                      updateCustomerField("address", event.target.value)
-                    }
-                    className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-blue-500"
-                  />
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div>
+                    <label className="text-xs font-semibold text-slate-600">
+                      Negara
+                    </label>
+                    <select
+                      value={customer.country}
+                      onChange={(event) =>
+                        updateCustomerField("country", event.target.value)
+                      }
+                      className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-blue-500"
+                    >
+                      {countryOptions.map((option) => (
+                        <option key={option.code} value={option.name}>
+                          {option.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-slate-600">
+                      Provinsi
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="DKI Jakarta"
+                      value={customer.province}
+                      onChange={(event) =>
+                        updateCustomerField("province", event.target.value)
+                      }
+                      className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-blue-500"
+                    />
+                  </div>
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-2">
                   <div>
                     <label className="text-xs font-semibold text-slate-600">
-                      Kota
+                      Kota / Kabupaten
                     </label>
                     <input
                       type="text"
@@ -196,7 +238,38 @@ export function Pemesanan() {
                   </div>
                   <div>
                     <label className="text-xs font-semibold text-slate-600">
-                      Code Pos
+                      Kecamatan (District)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Kemayoran"
+                      value={customer.district}
+                      onChange={(event) =>
+                        updateCustomerField("district", event.target.value)
+                      }
+                      className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-blue-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div>
+                    <label className="text-xs font-semibold text-slate-600">
+                      Kelurahan / Desa (Subdistrict)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Kebon Kosong"
+                      value={customer.subdistrict}
+                      onChange={(event) =>
+                        updateCustomerField("subdistrict", event.target.value)
+                      }
+                      className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-slate-600">
+                      Kode Pos
                     </label>
                     <input
                       type="text"
@@ -212,14 +285,29 @@ export function Pemesanan() {
 
                 <div>
                   <label className="text-xs font-semibold text-slate-600">
-                    Provinsi
+                    Detail Alamat
                   </label>
-                  <input
-                    type="text"
-                    placeholder="DKI Jakarta"
-                    value={customer.province}
+                  <textarea
+                    rows={3}
+                    placeholder="Nama jalan, nomor, RT/RW, patokan"
+                    value={customer.address}
                     onChange={(event) =>
-                      updateCustomerField("province", event.target.value)
+                      updateCustomerField("address", event.target.value)
+                    }
+                    className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-slate-600">
+                    Catatan Alamat (opsional)
+                  </label>
+                  <textarea
+                    rows={2}
+                    placeholder="Contoh: titip ke satpam, rumah warna putih"
+                    value={customer.notes}
+                    onChange={(event) =>
+                      updateCustomerField("notes", event.target.value)
                     }
                     className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-blue-500"
                   />

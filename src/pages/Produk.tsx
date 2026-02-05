@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { CheckCircle2 } from "lucide-react"
 import { Link, useParams } from "react-router-dom"
 import PageLayout from "@/components/PageLayout"
@@ -81,16 +81,31 @@ export function Produk() {
   const { products, currentProduct, isLoading, error, loadProducts, loadProduct } =
     useProductsStore()
   const { addItem } = useCartStore()
+  const [quantityById, setQuantityById] = useState<Record<string, number>>({})
 
   useEffect(() => {
-    if (productId) {
-      loadProduct(productId)
-    } else {
-      loadProducts({ limit: 1 })
-    }
-  }, [productId, loadProduct, loadProducts])
+    loadProducts()
+  }, [loadProducts])
 
-  const product = productId ? currentProduct : products[0]
+  const selectedProductId =
+    productId || products[0]?.id || currentProduct?.id || null
+
+  useEffect(() => {
+    if (!selectedProductId) return
+    if (currentProduct?.id === selectedProductId) return
+    loadProduct(selectedProductId)
+  }, [selectedProductId, currentProduct?.id, loadProduct])
+
+  const productFromList = selectedProductId
+    ? products.find((item) => item.id === selectedProductId)
+    : undefined
+  const product =
+    currentProduct?.id === selectedProductId ? currentProduct : productFromList
+  const activeProductId = product?.id
+  const quantity =
+    activeProductId && quantityById[activeProductId]
+      ? quantityById[activeProductId]
+      : 1
 
   const productFeatures = useMemo(() => {
     if (!product?.product_features?.length) return fallbackFeatures
@@ -131,33 +146,92 @@ export function Produk() {
     "Pengering Udang Tenaga Surya kami adalah terobosan dalam pengolahan hasil laut, menawarkan efisiensi tanpa banding, higienis, dan ramah lingkungan. Optimalkan kualitas produk dan kurangi biaya operasional Anda dengan teknologi terdepan."
   const imageUrl = product?.image_url || "/hero-team.svg"
   const handleOrderNow = () => {
-    if (product?.id) {
-      addItem(product.id, 1)
+    if (activeProductId) {
+      addItem(activeProductId, quantity)
     }
   }
 
-  if (isLoading) {
-    return (
-      <PageLayout>
-        <section className="mx-auto w-full max-w-6xl px-6 py-20 text-center">
-          <p className="text-slate-500">Memuat produk...</p>
-        </section>
-      </PageLayout>
-    )
-  }
-
-  if (error) {
-    return (
-      <PageLayout>
-        <section className="mx-auto w-full max-w-6xl px-6 py-20 text-center">
-          <p className="text-red-500">{error}</p>
-        </section>
-      </PageLayout>
-    )
+  const handleQuantityChange = (nextValue: number) => {
+    const nextQty = Number.isFinite(nextValue) ? Math.floor(nextValue) : 1
+    if (!activeProductId) return
+    const normalized = Math.max(1, nextQty)
+    setQuantityById((prev) => ({
+      ...prev,
+      [activeProductId]: normalized,
+    }))
   }
 
   return (
     <PageLayout>
+      <section className="mx-auto w-full max-w-6xl px-6 pb-12 pt-12 md:pb-16 md:pt-16">
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-wide text-blue-600">
+              Katalog Produk
+            </p>
+            <h1 className="mt-2 font-['Sora'] text-3xl font-semibold text-slate-900 md:text-4xl">
+              Pilih Mesin Pengering Anda
+            </h1>
+          </div>
+          <p className="text-sm text-slate-500">
+            Klik produk untuk melihat detail lengkap.
+          </p>
+        </div>
+
+        {error && (
+          <p className="mt-4 text-sm text-red-500">{error}</p>
+        )}
+
+        <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {products.length === 0 && isLoading ? (
+            <div className="rounded-2xl border border-dashed border-slate-200 p-6 text-sm text-slate-500">
+              Memuat katalog produk...
+            </div>
+          ) : null}
+
+          {products.length === 0 && !isLoading ? (
+            <div className="rounded-2xl border border-dashed border-slate-200 p-6 text-sm text-slate-500">
+              Produk belum tersedia. Silakan cek kembali nanti.
+            </div>
+          ) : null}
+
+          {products.map((item) => {
+            const isActive = item.id === selectedProductId
+            const priceLabel = item.price_idr
+              ? `Rp ${item.price_idr.toLocaleString("id-ID")}${item.price_unit ? `/${item.price_unit}` : ""}`
+              : "Hubungi kami"
+            return (
+              <Link
+                key={item.id}
+                to={`/produk/${item.id}`}
+                className={`group rounded-3xl border bg-white p-4 shadow-sm transition hover:-translate-y-1 hover:shadow-md ${
+                  isActive ? "border-blue-500" : "border-slate-200"
+                }`}
+              >
+                <div className="aspect-square overflow-hidden rounded-2xl bg-slate-50">
+                  <img
+                    src={item.image_url || "/hero-team.svg"}
+                    alt={item.title}
+                    className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+                  />
+                </div>
+                <div className="mt-4">
+                  <p className="text-base font-semibold text-slate-900">
+                    {item.title}
+                  </p>
+                  <p className="mt-2 text-sm font-semibold text-blue-600">
+                    {priceLabel}
+                  </p>
+                  <p className="mt-2 text-xs text-slate-500">
+                    Lihat detail produk
+                  </p>
+                </div>
+              </Link>
+            )
+          })}
+        </div>
+      </section>
+
       <section className="mx-auto w-full max-w-6xl px-6 pb-16 pt-12 md:pb-20 md:pt-16">
         <div className="grid items-center gap-10 md:grid-cols-[1.05fr_0.95fr]">
           <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-md">
@@ -190,6 +264,38 @@ export function Produk() {
                     <span>{feature}</span>
                   </div>
                 ))}
+              </div>
+            </div>
+
+            <div className="mt-6 flex flex-wrap items-center gap-4">
+              <span className="text-sm font-semibold text-slate-900">
+                Jumlah
+              </span>
+              <div className="flex items-center overflow-hidden rounded-full border border-slate-200 bg-white">
+                <button
+                  type="button"
+                  onClick={() => handleQuantityChange(quantity - 1)}
+                  disabled={quantity <= 1}
+                  className="h-10 w-10 text-lg font-semibold text-slate-500 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:text-slate-300"
+                >
+                  -
+                </button>
+                <input
+                  type="number"
+                  min={1}
+                  value={quantity}
+                  onChange={(event) =>
+                    handleQuantityChange(Number(event.target.value))
+                  }
+                  className="h-10 w-16 border-x border-slate-200 text-center text-sm font-semibold text-slate-900 outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleQuantityChange(quantity + 1)}
+                  className="h-10 w-10 text-lg font-semibold text-slate-500 transition hover:bg-slate-100"
+                >
+                  +
+                </button>
               </div>
             </div>
 
