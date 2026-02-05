@@ -57,7 +57,14 @@ export function LoginModal({
       ? await forgot()
       : await login()
 
-    if (success && !isForgot) {
+    if (!success) return
+
+    if (isRegister) {
+      onSwitchMode("login")
+      return
+    }
+
+    if (!isForgot) {
       onLoginSuccess?.()
       onClose()
     }

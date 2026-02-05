@@ -34,9 +34,11 @@ export function AppHeader({ onLoginClick, isLoggedIn, onLogout }: AppHeaderProps
       <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-4">
         <div className="flex items-center gap-4">
           <Link to="/beranda" className="flex items-center gap-2">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-orange-500 text-white">
-              <span className="text-lg font-semibold">B</span>
-            </span>
+            <img
+              src="/Logo PT Bafain Haridra Indonesia.png"
+              alt="Bafain Haridra Indonesia"
+              className="h-10 w-auto"
+            />
             <div className="leading-tight">
               <p className="text-sm font-semibold uppercase tracking-wide text-slate-900">
                 Bafain
