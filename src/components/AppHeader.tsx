@@ -25,10 +25,7 @@ export function AppHeader({ onLoginClick, isLoggedIn, onLogout }: AppHeaderProps
     loadCart()
   }, [isLoggedIn, loadCart])
 
-  const itemCount = useMemo(
-    () => items.reduce((total, item) => total + item.qty, 0),
-    [items]
-  )
+  const itemCount = useMemo(() => items.length, [items])
   const formatIdr = (value: number) =>
     `Rp ${value.toLocaleString("id-ID")}`
 
@@ -80,7 +77,13 @@ export function AppHeader({ onLoginClick, isLoggedIn, onLogout }: AppHeaderProps
           <div className="relative">
             <button
               type="button"
-              onClick={() => setCartOpen((prev) => !prev)}
+              onClick={() =>
+                setCartOpen((prev) => {
+                  const next = !prev
+                  if (next) setMenuOpen(false)
+                  return next
+                })
+              }
               className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:border-slate-300 hover:text-slate-900"
               aria-haspopup="dialog"
               aria-expanded={cartOpen}
@@ -187,7 +190,13 @@ export function AppHeader({ onLoginClick, isLoggedIn, onLogout }: AppHeaderProps
           {isLoggedIn ? (
             <button
               type="button"
-              onClick={() => setMenuOpen((prev) => !prev)}
+              onClick={() =>
+                setMenuOpen((prev) => {
+                  const next = !prev
+                  if (next) setCartOpen(false)
+                  return next
+                })
+              }
               className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:border-slate-300 hover:text-slate-900"
               aria-haspopup="menu"
               aria-expanded={menuOpen}
