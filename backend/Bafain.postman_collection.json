@@ -1,0 +1,965 @@
+{
+  "info": {
+    "name": "Bafain API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Quick start:\n1) Import this collection.\n2) Set collection variable baseUrl (default http://localhost:8000).\n3) Run Auth > POST /auth/login to auto-fill accessToken/refreshToken.\n4) Use other requests; protected routes use the saved accessToken.\nNotes: create endpoints auto-save IDs to collection variables (productId, orderId, addressId, itemId)."
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000"
+    },
+    {
+      "key": "accessToken",
+      "value": ""
+    },
+    {
+      "key": "refreshToken",
+      "value": ""
+    },
+    {
+      "key": "productId",
+      "value": ""
+    },
+    {
+      "key": "orderId",
+      "value": ""
+    },
+    {
+      "key": "addressId",
+      "value": ""
+    },
+    {
+      "key": "itemId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "GET /health",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/health",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "POST /auth/register",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/register",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"strongpassword\",\n  \"name\": \"Full Name\",\n  \"phone\": \"+628123456789\"\n}"
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  const data = pm.response.json();",
+                  "  if (data && data.session) {",
+                  "    if (data.session.access_token) pm.collectionVariables.set(\"accessToken\", data.session.access_token);",
+                  "    if (data.session.refresh_token) pm.collectionVariables.set(\"refreshToken\", data.session.refresh_token);",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /auth/login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"strongpassword\"\n}"
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  const data = pm.response.json();",
+                  "  if (data && data.session) {",
+                  "    if (data.session.access_token) pm.collectionVariables.set(\"accessToken\", data.session.access_token);",
+                  "    if (data.session.refresh_token) pm.collectionVariables.set(\"refreshToken\", data.session.refresh_token);",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /auth/refresh",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/refresh",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh_token\": \"{{refreshToken}}\"\n}"
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  const data = pm.response.json();",
+                  "  if (data && data.session) {",
+                  "    if (data.session.access_token) pm.collectionVariables.set(\"accessToken\", data.session.access_token);",
+                  "    if (data.session.refresh_token) pm.collectionVariables.set(\"refreshToken\", data.session.refresh_token);",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /auth/forgot-password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/forgot-password",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\"\n}"
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /auth/reset-password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/reset-password",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"access_token\": \"<idToken or oobCode>\",\n  \"refresh_token\": \"{{refreshToken}}\",\n  \"new_password\": \"newstrongpassword\"\n}"
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Profile",
+      "item": [
+        {
+          "name": "GET /api/v1/me",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/me"
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /api/v1/me",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/me",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"full_name\": \"New Name\",\n  \"email\": \"new@example.com\",\n  \"phone\": \"+628123456789\",\n  \"company\": \"Company\",\n  \"address\": \"Address\",\n  \"joined_date\": \"2026-02-01\",\n  \"avatar_url\": \"https://example.com/avatar.jpg\",\n  \"metadata\": {\n    \"key\": \"value\"\n  }\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/v1/me/avatar",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/me/avatar",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"avatar_url\": \"https://example.com/avatar.jpg\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/v1/me/order-stats",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/me/order-stats"
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/v1/me/orders/recent",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/me/orders/recent?limit=5",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "me",
+                "orders",
+                "recent"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "5"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Addresses",
+      "item": [
+        {
+          "name": "GET /api/v1/me/addresses",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/me/addresses"
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/v1/me/addresses",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/me/addresses",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"label\": \"Home\",\n  \"recipient_name\": \"Name\",\n  \"email\": \"user@example.com\",\n  \"phone\": \"+628123456789\",\n  \"address_line1\": \"Street\",\n  \"address_line2\": \"\",\n  \"city\": \"Jakarta\",\n  \"province\": \"DKI\",\n  \"postal_code\": \"12345\",\n  \"country\": \"ID\",\n  \"notes\": \"\",\n  \"latitude\": -6.2,\n  \"longitude\": 106.8,\n  \"is_default\": true,\n  \"metadata\": {\n    \"key\": \"value\"\n  }\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  const data = pm.response.json();",
+                  "  if (data && data.address && data.address.id) pm.collectionVariables.set(\"addressId\", data.address.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH /api/v1/me/addresses/:address_id",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/me/addresses/{{addressId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"label\": \"Home\",\n  \"is_default\": true\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /api/v1/me/addresses/:address_id",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/v1/me/addresses/{{addressId}}"
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/v1/me/addresses/:address_id/set-default",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/me/addresses/{{addressId}}/set-default"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Products",
+      "item": [
+        {
+          "name": "GET /products",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/products?limit=50&offset=0&q=&min_price=&max_price=&feature=&spec_key=&spec_value=",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "products"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "50"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                },
+                {
+                  "key": "q",
+                  "value": ""
+                },
+                {
+                  "key": "min_price",
+                  "value": ""
+                },
+                {
+                  "key": "max_price",
+                  "value": ""
+                },
+                {
+                  "key": "feature",
+                  "value": ""
+                },
+                {
+                  "key": "spec_key",
+                  "value": ""
+                },
+                {
+                  "key": "spec_value",
+                  "value": ""
+                }
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /products/:product_id",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/products/{{productId}}",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /products",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/products",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Product\",\n  \"price_idr\": 150000,\n  \"price_unit\": \"unit\",\n  \"description\": \"Desc\",\n  \"image_url\": \"https://example.com/image.jpg\",\n  \"images\": [\n    {\n      \"image_url\": \"https://example.com/image.jpg\",\n      \"sort_order\": 0\n    }\n  ],\n  \"features\": [\n    {\n      \"feature\": \"Feature\",\n      \"sort_order\": 0\n    }\n  ],\n  \"specs\": [\n    {\n      \"spec_key\": \"Size\",\n      \"spec_value\": \"M\",\n      \"spec_qty\": 1,\n      \"spec_unit\": \"pcs\",\n      \"sort_order\": 0\n    }\n  ],\n  \"benefits\": [\n    {\n      \"title\": \"Benefit\",\n      \"description\": \"...\",\n      \"sort_order\": 0\n    }\n  ],\n  \"gallery\": [\n    {\n      \"title\": \"Gallery\",\n      \"description\": \"...\",\n      \"image_url\": \"https://example.com/gallery.jpg\",\n      \"sort_order\": 0\n    }\n  ]\n}"
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  const data = pm.response.json();",
+                  "  if (data && data.id) pm.collectionVariables.set(\"productId\", data.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PUT /products/:product_id",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/products/{{productId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Updated Product\",\n  \"price_idr\": 200000\n}"
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /products/:product_id",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/products/{{productId}}",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Cart",
+      "item": [
+        {
+          "name": "GET /cart",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/cart"
+          },
+          "response": []
+        },
+        {
+          "name": "POST /cart/items",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/cart/items",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product_id\": \"{{productId}}\",\n  \"qty\": 2\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  const data = pm.response.json();",
+                  "  if (data && data.item && data.item.id) pm.collectionVariables.set(\"itemId\", data.item.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH /cart/items/:item_id",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/cart/items/{{itemId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"qty\": 3\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /cart/items/:item_id",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/cart/items/{{itemId}}"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Checkout",
+      "item": [
+        {
+          "name": "POST /checkout/summary",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/checkout/summary",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"address\": {},\n  \"shipping_option\": {\n    \"id\": \"standar\",\n    \"price\": 50000\n  },\n  \"subtotal\": 250000\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /checkout/select-shipping",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/checkout/select-shipping",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"option_id\": \"standar\"\n}"
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Shipping",
+      "item": [
+        {
+          "name": "GET /shipping/options",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/shipping/options"
+          },
+          "response": []
+        },
+        {
+          "name": "POST /shipping/quote",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/shipping/quote",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"address\": {},\n  \"items\": [\n    {\n      \"product_id\": \"{{productId}}\",\n      \"qty\": 2\n    }\n  ]\n}"
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Orders",
+      "item": [
+        {
+          "name": "POST /orders",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/orders",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"address\": {},\n  \"shipping_option\": {},\n  \"customer_note\": \"...\",\n  \"items\": [\n    {\n      \"product_id\": \"{{productId}}\",\n      \"qty\": 2\n    }\n  ],\n  \"subtotal\": 250000,\n  \"shipping_fee\": 50000,\n  \"total\": 300000,\n  \"payment_method\": {\n    \"id\": \"transfer\"\n  }\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  const data = pm.response.json();",
+                  "  if (data && data.order && data.order.id) pm.collectionVariables.set(\"orderId\", data.order.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /orders",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/orders?page=1&limit=10&status=&q=",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orders"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "status",
+                  "value": ""
+                },
+                {
+                  "key": "q",
+                  "value": ""
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /orders/:order_id",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/orders/{{orderId}}"
+          },
+          "response": []
+        },
+        {
+          "name": "POST /orders/:order_id/cancel",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/orders/{{orderId}}/cancel"
+          },
+          "response": []
+        },
+        {
+          "name": "POST /orders/:order_id/confirm-received",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/orders/{{orderId}}/confirm-received"
+          },
+          "response": []
+        },
+        {
+          "name": "POST /orders/:order_id/check-payment",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/orders/{{orderId}}/check-payment"
+          },
+          "response": []
+        },
+        {
+          "name": "POST /orders/:order_id/notes",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/orders/{{orderId}}/notes",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"note\": \"Customer note\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /orders/:order_id/notes",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/orders/{{orderId}}/notes"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Invoice",
+      "item": [
+        {
+          "name": "GET /orders/:order_id/invoice",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/orders/{{orderId}}/invoice"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Shipment & Tracking",
+      "item": [
+        {
+          "name": "GET /api/v1/orders/:order_id/shipment",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/orders/{{orderId}}/shipment"
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/v1/orders/:order_id/tracking-events",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/orders/{{orderId}}/tracking-events"
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/v1/track",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/track?orderNumber=ORD-123&emailOrPhone=user@example.com",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "track"
+              ],
+              "query": [
+                {
+                  "key": "orderNumber",
+                  "value": "ORD-123"
+                },
+                {
+                  "key": "emailOrPhone",
+                  "value": "user@example.com"
+                }
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Uploads",
+      "item": [
+        {
+          "name": "POST /uploads/sign",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/uploads/sign",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"filename\": \"photo.jpg\",\n  \"folder\": \"products\",\n  \"product_id\": \"{{productId}}\",\n  \"upsert\": false\n}"
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Admin Orders",
+      "item": [
+        {
+          "name": "GET /api/v1/admin/orders",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/orders?page=1&limit=10&status=&q=",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "admin",
+                "orders"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "status",
+                  "value": ""
+                },
+                {
+                  "key": "q",
+                  "value": ""
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /api/v1/admin/orders/:order_id",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/admin/orders/{{orderId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"diproses\",\n  \"notes\": \"...\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /api/v1/admin/orders/:order_id/shipment",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/admin/orders/{{orderId}}/shipment",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"carrier\": \"JNE\",\n  \"nomor_resi\": \"RESI123\",\n  \"eta\": \"2-3 hari\"\n}"
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  }
+}
