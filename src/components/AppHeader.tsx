@@ -46,11 +46,6 @@ export function AppHeader({ onLoginClick, isLoggedIn, onLogout }: AppHeaderProps
               <p className="text-xs text-slate-500">Solar Dryer</p>
             </div>
           </Link>
-          <div className="hidden items-center gap-2 rounded-full border border-slate-200 px-3 py-1 text-xs text-slate-500 md:flex">
-            <span className="font-medium text-slate-600">Astra</span>
-            <span className="h-1 w-1 rounded-full bg-slate-300" />
-            <span>Inovasi Hijau</span>
-          </div>
         </div>
 
         <nav className="hidden items-center gap-6 text-sm font-medium text-slate-600 md:flex">
