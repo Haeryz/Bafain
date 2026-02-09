@@ -7,6 +7,8 @@ from models.checkout import (
 from models.shipping import ShippingOption
 from lib.firebase_auth import get_user_id
 
+TAX_RATE = 0.11
+
 
 def _default_options() -> list[ShippingOption]:
   return [
@@ -43,10 +45,13 @@ def checkout_summary(
     if isinstance(value, (int, float)):
       shipping_fee = int(value)
       break
-  total = subtotal + shipping_fee
+  pre_tax_total = subtotal + shipping_fee
+  tax_amount = int(round(pre_tax_total * TAX_RATE))
+  total = pre_tax_total + tax_amount
   return {
     "subtotal": subtotal,
     "shipping_fee": shipping_fee,
+    "tax_amount": tax_amount,
     "total": total,
     "currency": "IDR",
   }
