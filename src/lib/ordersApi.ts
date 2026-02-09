@@ -85,6 +85,7 @@ export type OrderPayload = {
   items?: Record<string, unknown>[] | null
   subtotal?: number | null
   shipping_fee?: number | null
+  tax_amount?: number | null
   total?: number | null
   currency?: string | null
   payment_method?: Record<string, unknown> | null
@@ -114,6 +115,7 @@ export function createOrder(payload: {
   items?: Record<string, unknown>[]
   subtotal?: number
   shipping_fee?: number
+  tax_amount?: number
   total?: number
   payment_method?: Record<string, unknown>
 }) {
