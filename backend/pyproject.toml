@@ -8,4 +8,5 @@ dependencies = [
   "uvicorn[standard]",
   "redis",
   "python-dotenv",
+  "groq>=1.0.0",
 ]
