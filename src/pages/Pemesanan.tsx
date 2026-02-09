@@ -27,6 +27,11 @@ const fallbackSubtotal = 500000
 const formatIdr = (value: number) =>
   `Rp ${value.toLocaleString("id-ID")}`
 
+const TAX_RATE = 0.11
+
+const calculateTaxAmount = (baseTotal: number) =>
+  Math.round(baseTotal * TAX_RATE)
+
 export function Pemesanan() {
   const navigate = useNavigate()
   const [showAllPayments, setShowAllPayments] = useState(false)
@@ -36,11 +41,17 @@ export function Pemesanan() {
     paymentMethod,
     shippingOptions,
     selectedShippingId,
+    expeditionOptions,
+    selectedExpeditionId,
+    packagingOptions,
+    selectedPackagingId,
     summary,
     isLoading: isCheckoutLoading,
     error: checkoutError,
     updateCustomerField,
     setPaymentMethod,
+    setExpeditionOption,
+    setPackagingOption,
     setShippingOption,
     loadShippingOptions,
     calculateSummary,
@@ -57,7 +68,13 @@ export function Pemesanan() {
 
   useEffect(() => {
     calculateSummary()
-  }, [selectedShippingId, subtotal, calculateSummary])
+  }, [
+    selectedShippingId,
+    selectedExpeditionId,
+    selectedPackagingId,
+    subtotal,
+    calculateSummary,
+  ])
 
   const cartSummaryItems = useMemo(
     () =>
@@ -95,8 +112,18 @@ export function Pemesanan() {
   const activeShipping =
     shippingOptions.find((option) => option.id === selectedShippingId) ||
     shippingOptions[0]
+  const activeExpedition =
+    expeditionOptions.find((option) => option.id === selectedExpeditionId) ||
+    expeditionOptions[0]
+  const activePackaging =
+    packagingOptions.find((option) => option.id === selectedPackagingId) ||
+    packagingOptions[0]
   const shippingCost = activeShipping?.price_value ?? 0
-  const totalCost = summary?.total ?? cartSubtotal + shippingCost
+  const subtotalCost = summary?.subtotal ?? cartSubtotal
+  const shippingFee = summary?.shipping_fee ?? shippingCost
+  const preTaxTotal = subtotalCost + shippingFee
+  const taxAmount = summary?.tax_amount ?? calculateTaxAmount(preTaxTotal)
+  const totalCost = summary?.total ?? preTaxTotal + taxAmount
 
   const handlePaymentChange = (methodId: string, methodLabel: string) => {
     setPaymentMethod({ id: methodId, label: methodLabel })
@@ -104,6 +131,14 @@ export function Pemesanan() {
 
   const handleShippingChange = (methodId: string) => {
     setShippingOption(methodId)
+  }
+
+  const handleExpeditionChange = (optionId: string) => {
+    setExpeditionOption(optionId)
+  }
+
+  const handlePackagingChange = (optionId: string) => {
+    setPackagingOption(optionId)
   }
 
   const handlePlaceOrder = async () => {
@@ -364,6 +399,85 @@ export function Pemesanan() {
             </div>
 
             <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <h2 className="font-['Sora'] text-lg font-semibold text-slate-900">
+                Ekspedisi
+              </h2>
+              <div className="mt-6 grid gap-3 md:grid-cols-2">
+                {expeditionOptions.map((option) => {
+                  const isActive = selectedExpeditionId === option.id
+                  return (
+                    <button
+                      key={option.id}
+                      type="button"
+                      onClick={() => handleExpeditionChange(option.id)}
+                      className={`flex cursor-pointer items-center justify-between rounded-xl border px-4 py-4 text-left transition ${
+                        isActive
+                          ? "border-blue-500 bg-blue-50/40"
+                          : "border-slate-200 bg-white hover:border-slate-300"
+                      }`}
+                    >
+                      <span className="text-sm font-semibold text-slate-900">
+                        {option.label}
+                      </span>
+                      <span
+                        className={`flex h-4 w-4 items-center justify-center rounded-full border ${
+                          isActive
+                            ? "border-blue-500 bg-blue-500"
+                            : "border-slate-300"
+                        }`}
+                      >
+                        {isActive && (
+                          <span className="h-1.5 w-1.5 rounded-full bg-white" />
+                        )}
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <h2 className="font-['Sora'] text-lg font-semibold text-slate-900">
+                Packaging
+              </h2>
+              <div className="mt-6 space-y-3">
+                {packagingOptions.map((option) => {
+                  const isActive = selectedPackagingId === option.id
+                  return (
+                    <button
+                      key={option.id}
+                      type="button"
+                      onClick={() => handlePackagingChange(option.id)}
+                      className={`flex w-full cursor-pointer items-center justify-between rounded-xl border px-4 py-4 text-left transition ${
+                        isActive
+                          ? "border-blue-500 bg-blue-50/40"
+                          : "border-slate-200 bg-white hover:border-slate-300"
+                      }`}
+                    >
+                      <div>
+                        <p className="text-sm font-semibold text-slate-900">
+                          {option.label}
+                        </p>
+                        <p className="text-xs text-slate-500">{option.detail}</p>
+                      </div>
+                      <span
+                        className={`flex h-4 w-4 items-center justify-center rounded-full border ${
+                          isActive
+                            ? "border-blue-500 bg-blue-500"
+                            : "border-slate-300"
+                        }`}
+                      >
+                        {isActive && (
+                          <span className="h-1.5 w-1.5 rounded-full bg-white" />
+                        )}
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
               <div className="flex items-center justify-between">
                 <h2 className="font-['Sora'] text-lg font-semibold text-slate-900">
                   Metode Pembayaran
@@ -463,7 +577,25 @@ export function Pemesanan() {
               <div className="flex items-center justify-between border-b border-slate-200 pb-3">
                 <span>Pengiriman</span>
                 <span className="font-semibold text-slate-900">
-                  {formatIdr(summary?.shipping_fee ?? shippingCost)}
+                  {formatIdr(shippingFee)}
+                </span>
+              </div>
+              <div className="flex items-center justify-between pt-1">
+                <span>Ekspedisi</span>
+                <span className="font-semibold text-slate-900">
+                  {activeExpedition?.label || "JNE"}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span>Packaging</span>
+                <span className="font-semibold text-slate-900">
+                  {activePackaging?.label || "Regular"}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span>Pajak 11%</span>
+                <span className="font-semibold text-slate-900">
+                  {formatIdr(taxAmount)}
                 </span>
               </div>
               <div className="flex items-center justify-between pt-2 text-base font-semibold text-slate-900">
