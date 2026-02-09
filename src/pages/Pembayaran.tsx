@@ -225,17 +225,19 @@ export function Pembayaran() {
   }, [paymentDeadline, now])
 
   const isExpired = remainingMs !== null && remainingMs <= 0
-  const handleDownloadInvoice = () => {
+  const invoiceUrl = orderId
+    ? `/invoice?orderId=${encodeURIComponent(orderId)}`
+    : "#"
+
+  const handleDownloadInvoice = (
+    event: React.MouseEvent<HTMLAnchorElement>
+  ) => {
     if (!orderId) {
+      event.preventDefault()
       setInvoiceError("ID pesanan belum tersedia.")
       return
     }
     setInvoiceError(null)
-    const url = `/invoice?orderId=${encodeURIComponent(orderId)}`
-    const invoiceTab = window.open(url, "_blank", "noopener,noreferrer")
-    if (!invoiceTab) {
-      setInvoiceError("Pop-up diblokir oleh browser. Izinkan pop-up dulu.")
-    }
   }
 
   return (
@@ -508,13 +510,15 @@ export function Pembayaran() {
                   Untuk melihat detail invoice, silakan download.
                 </p>
               </div>
-              <button
-                type="button"
+              <a
+                href={invoiceUrl}
                 onClick={handleDownloadInvoice}
-                className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-blue-600 px-5 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-70"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-blue-600 px-5 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-blue-700"
               >
                 Download Invoice
-              </button>
+              </a>
             </div>
 
             {invoiceError && (
