@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react"
+import { useEffect, useRef, useState, type ReactNode } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
 import AppFooter from "./AppFooter"
 import AppHeader from "./AppHeader"
@@ -19,6 +19,14 @@ export function PageLayout({ children }: PageLayoutProps) {
   const logout = useAuthStore((state) => state.logout)
   const navigate = useNavigate()
   const location = useLocation()
+  const wasLoggedIn = useRef(isLoggedIn)
+
+  useEffect(() => {
+    if (wasLoggedIn.current && !isLoggedIn) {
+      navigate("/beranda")
+    }
+    wasLoggedIn.current = isLoggedIn
+  }, [isLoggedIn, navigate])
 
   useEffect(() => {
     if (!isLoggedIn) return
