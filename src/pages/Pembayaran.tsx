@@ -22,6 +22,11 @@ const paymentSteps = [
   },
 ]
 
+const TAX_RATE = 0.11
+
+const calculateTaxAmount = (baseTotal: number) =>
+  Math.round(baseTotal * TAX_RATE)
+
 export function Pembayaran() {
   const navigate = useNavigate()
   const [showCopied, setShowCopied] = useState(false)
@@ -46,6 +51,10 @@ export function Pembayaran() {
     window.localStorage.getItem("bafain:shippingLabel") || "Pengiriman Standar"
   const selectedShippingDetail =
     window.localStorage.getItem("bafain:shippingDetail") || "3 - 5 hari kerja"
+  const selectedExpeditionLabel =
+    window.localStorage.getItem("bafain:expeditionLabel") || "JNE"
+  const selectedPackagingLabel =
+    window.localStorage.getItem("bafain:packagingLabel") || "Regular"
   const selectedShippingPrice =
     summary?.shipping_fee ??
     Number(window.localStorage.getItem("bafain:shippingPrice") || "50000")
@@ -133,7 +142,11 @@ export function Pembayaran() {
     cartSummaryItems.length > 0 ? cartSummaryItems : fallbackItems
   const cartSubtotal =
     cartSummaryItems.length > 0 ? subtotal : fallbackItems[0].price_idr
-  const totalCost = summary?.total ?? cartSubtotal + selectedShippingPrice
+  const subtotalCost = summary?.subtotal ?? cartSubtotal
+  const shippingFee = summary?.shipping_fee ?? selectedShippingPrice
+  const preTaxTotal = subtotalCost + shippingFee
+  const taxAmount = summary?.tax_amount ?? calculateTaxAmount(preTaxTotal)
+  const totalCost = summary?.total ?? preTaxTotal + taxAmount
 
   const formatIdr = (value: number) =>
     `Rp ${value.toLocaleString("id-ID")}`
@@ -417,14 +430,36 @@ export function Pembayaran() {
               <p>
                 Pengiriman : {selectedShippingDetail} ({selectedShippingLabel})
               </p>
+              <p>Ekspedisi : {selectedExpeditionLabel}</p>
+              <p>Packaging : {selectedPackagingLabel}</p>
             </div>
 
             <div className="mt-4 border-t border-slate-200 pt-4">
-              <div className="flex items-center justify-between text-sm text-slate-700">
-                <span>Total Pembayaran</span>
-                <span className="text-base font-semibold text-orange-500">
-                  {formatIdr(totalCost)}
-                </span>
+              <div className="space-y-2 text-sm text-slate-700">
+                <div className="flex items-center justify-between">
+                  <span>Subtotal</span>
+                  <span className="font-semibold text-slate-900">
+                    {formatIdr(subtotalCost)}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span>Pengiriman</span>
+                  <span className="font-semibold text-slate-900">
+                    {formatIdr(shippingFee)}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                  <span>Pajak 11%</span>
+                  <span className="font-semibold text-slate-900">
+                    {formatIdr(taxAmount)}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between pt-1">
+                  <span>Total Pembayaran</span>
+                  <span className="text-base font-semibold text-orange-500">
+                    {formatIdr(totalCost)}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
