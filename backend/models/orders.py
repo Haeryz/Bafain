@@ -10,6 +10,7 @@ class OrderCreateRequest(BaseModel):
   items: Optional[list[dict[str, Any]]] = None
   subtotal: Optional[int] = None
   shipping_fee: Optional[int] = None
+  tax_amount: Optional[int] = None
   total: Optional[int] = None
   payment_method: Optional[dict[str, Any]] = None
 
