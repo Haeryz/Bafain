@@ -33,6 +33,17 @@ type PaymentMethod = {
   label: string
 }
 
+type ExpeditionOption = {
+  id: string
+  label: string
+}
+
+type PackagingOption = {
+  id: string
+  label: string
+  detail: string
+}
+
 type UiShippingOption = {
   id: string
   title: string
@@ -46,6 +57,10 @@ type CheckoutStoreState = {
   paymentMethod: PaymentMethod
   shippingOptions: UiShippingOption[]
   selectedShippingId: string
+  expeditionOptions: ExpeditionOption[]
+  selectedExpeditionId: string
+  packagingOptions: PackagingOption[]
+  selectedPackagingId: string
   summary: CheckoutSummaryResponse | null
   orderId: string | null
   orderStatus: string | null
@@ -55,6 +70,8 @@ type CheckoutStoreState = {
   error: string | null
   updateCustomerField: (field: keyof CustomerInfo, value: string) => void
   setPaymentMethod: (method: PaymentMethod) => void
+  setExpeditionOption: (optionId: string) => void
+  setPackagingOption: (optionId: string) => void
   setShippingOption: (optionId: string) => Promise<void>
   loadShippingOptions: () => Promise<void>
   calculateSummary: () => Promise<void>
@@ -89,6 +106,24 @@ const fallbackShippingOptions: UiShippingOption[] = [
   },
 ]
 
+const fallbackExpeditionOptions: ExpeditionOption[] = [
+  { id: "jne", label: "JNE" },
+  { id: "jnt", label: "JNT" },
+]
+
+const fallbackPackagingOptions: PackagingOption[] = [
+  {
+    id: "regular",
+    label: "Regular",
+    detail: "Kemasan standar",
+  },
+  {
+    id: "wooden",
+    label: "+ Wooden Package",
+    detail: "Tambahan pelindung kayu",
+  },
+]
+
 const getStoredValue = (key: string, fallback: string) => {
   if (typeof window === "undefined") return fallback
   return window.localStorage.getItem(key) || fallback
@@ -113,12 +148,42 @@ const getStoredDeadline = () => {
 const formatIdr = (value: number) =>
   `Rp ${value.toLocaleString("id-ID")}`
 
+const TAX_RATE = 0.11
+
+const calculateTaxAmount = (baseTotal: number) =>
+  Math.round(baseTotal * TAX_RATE)
+
+const calculateTotalWithTax = (subtotal: number, shippingFee: number) => {
+  const preTaxTotal = subtotal + shippingFee
+  const taxAmount = calculateTaxAmount(preTaxTotal)
+  return {
+    taxAmount,
+    total: preTaxTotal + taxAmount,
+  }
+}
+
 const mapShippingOption = (option: ShippingOption): UiShippingOption => ({
   id: option.id,
   title: option.name,
   detail: option.eta_text,
   price_value: option.price,
   price_label: formatIdr(option.price),
+})
+
+const buildShippingOptionPayload = (
+  shipping: UiShippingOption,
+  expedition: ExpeditionOption,
+  packaging: PackagingOption
+) => ({
+  id: shipping.id,
+  name: shipping.title,
+  price: shipping.price_value,
+  eta_text: shipping.detail,
+  expedition_id: expedition.id,
+  expedition_name: expedition.label,
+  packaging_id: packaging.id,
+  packaging_name: packaging.label,
+  packaging_detail: packaging.detail,
 })
 
 const buildAddressPayload = (customer: CustomerInfo) => ({
@@ -176,6 +241,10 @@ export const useCheckoutStore = create<CheckoutStoreState>((set, get) => ({
   },
   shippingOptions: fallbackShippingOptions,
   selectedShippingId: getStoredValue("bafain:shippingMethod", "standar"),
+  expeditionOptions: fallbackExpeditionOptions,
+  selectedExpeditionId: getStoredValue("bafain:expedition", "jne"),
+  packagingOptions: fallbackPackagingOptions,
+  selectedPackagingId: getStoredValue("bafain:packaging", "regular"),
   summary: getStoredSummary(),
   orderId: getStoredValue("bafain:orderId", "") || null,
   orderStatus: null,
@@ -198,6 +267,28 @@ export const useCheckoutStore = create<CheckoutStoreState>((set, get) => ({
       window.localStorage.setItem("bafain:paymentLabel", method.label)
     }
     set({ paymentMethod: method })
+  },
+
+  setExpeditionOption: (optionId) => {
+    const selected =
+      get().expeditionOptions.find((option) => option.id === optionId) ||
+      fallbackExpeditionOptions[0]
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("bafain:expedition", selected.id)
+      window.localStorage.setItem("bafain:expeditionLabel", selected.label)
+    }
+    set({ selectedExpeditionId: selected.id })
+  },
+
+  setPackagingOption: (optionId) => {
+    const selected =
+      get().packagingOptions.find((option) => option.id === optionId) ||
+      fallbackPackagingOptions[0]
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("bafain:packaging", selected.id)
+      window.localStorage.setItem("bafain:packagingLabel", selected.label)
+    }
+    set({ selectedPackagingId: selected.id })
   },
 
   setShippingOption: async (optionId) => {
@@ -270,15 +361,24 @@ export const useCheckoutStore = create<CheckoutStoreState>((set, get) => ({
       get().shippingOptions.find(
         (option) => option.id === get().selectedShippingId
       ) || fallbackShippingOptions[0]
+    const selectedExpedition =
+      get().expeditionOptions.find(
+        (option) => option.id === get().selectedExpeditionId
+      ) || fallbackExpeditionOptions[0]
+    const selectedPackaging =
+      get().packagingOptions.find(
+        (option) => option.id === get().selectedPackagingId
+      ) || fallbackPackagingOptions[0]
     const shippingFee = selected.price_value
-    const localTotal = subtotal + shippingFee
+    const localSummary = calculateTotalWithTax(subtotal, shippingFee)
 
     if (!token) {
       set({
         summary: {
           subtotal,
           shipping_fee: shippingFee,
-          total: localTotal,
+          tax_amount: localSummary.taxAmount,
+          total: localSummary.total,
           currency: "IDR",
         },
         isLoading: false,
@@ -289,12 +389,11 @@ export const useCheckoutStore = create<CheckoutStoreState>((set, get) => ({
     try {
       const response = await checkoutSummary({
         address: buildAddressPayload(get().customer),
-        shipping_option: {
-          id: selected.id,
-          name: selected.title,
-          price: selected.price_value,
-          eta_text: selected.detail,
-        },
+        shipping_option: buildShippingOptionPayload(
+          selected,
+          selectedExpedition,
+          selectedPackaging
+        ),
         subtotal,
       })
       const summary =
@@ -302,7 +401,8 @@ export const useCheckoutStore = create<CheckoutStoreState>((set, get) => ({
           ? {
               subtotal,
               shipping_fee: shippingFee,
-              total: localTotal,
+              tax_amount: localSummary.taxAmount,
+              total: localSummary.total,
               currency: response.currency || "IDR",
             }
           : response
@@ -318,7 +418,8 @@ export const useCheckoutStore = create<CheckoutStoreState>((set, get) => ({
         summary: {
           subtotal,
           shipping_fee: shippingFee,
-          total: localTotal,
+          tax_amount: localSummary.taxAmount,
+          total: localSummary.total,
           currency: "IDR",
         },
         error:
@@ -345,27 +446,40 @@ export const useCheckoutStore = create<CheckoutStoreState>((set, get) => ({
       get().shippingOptions.find(
         (option) => option.id === get().selectedShippingId
       ) || fallbackShippingOptions[0]
+    const selectedExpedition =
+      get().expeditionOptions.find(
+        (option) => option.id === get().selectedExpeditionId
+      ) || fallbackExpeditionOptions[0]
+    const selectedPackaging =
+      get().packagingOptions.find(
+        (option) => option.id === get().selectedPackagingId
+      ) || fallbackPackagingOptions[0]
+    const fallbackTotals = calculateTotalWithTax(
+      cartState.subtotal,
+      selected.price_value
+    )
     const summary = get().summary || {
       subtotal: cartState.subtotal,
       shipping_fee: selected.price_value,
-      total: cartState.subtotal + selected.price_value,
+      tax_amount: fallbackTotals.taxAmount,
+      total: fallbackTotals.total,
       currency: "IDR",
     }
     try {
       const response = await createOrder({
         address: buildAddressPayload(get().customer),
-        shipping_option: {
-          id: selected.id,
-          name: selected.title,
-          price: selected.price_value,
-          eta_text: selected.detail,
-        },
+        shipping_option: buildShippingOptionPayload(
+          selected,
+          selectedExpedition,
+          selectedPackaging
+        ),
         items: cartState.items.map((item) => ({
           product_id: item.product_id,
           qty: item.qty,
         })),
         subtotal: summary.subtotal,
         shipping_fee: summary.shipping_fee,
+        tax_amount: summary.tax_amount,
         total: summary.total,
         payment_method: get().paymentMethod,
       })
