@@ -16,6 +16,8 @@ from models.orders import (
 )
 from lib.firebase_auth import get_user_id
 
+TAX_RATE = 0.11
+
 
 def _orders_collection() -> str:
   return os.getenv("FIRESTORE_ORDERS_COLLECTION") or "orders"
@@ -68,7 +70,13 @@ def create_order(
   expires_at = created_at + timedelta(hours=24)
   subtotal = payload.subtotal or 0
   shipping_fee = payload.shipping_fee or 0
-  total = payload.total or (subtotal + shipping_fee)
+  pre_tax_total = subtotal + shipping_fee
+  tax_amount = (
+    payload.tax_amount
+    if payload.tax_amount is not None
+    else int(round(pre_tax_total * TAX_RATE))
+  )
+  total = pre_tax_total + tax_amount
   order = {
     "id": order_id,
     "user_id": user_id,
@@ -80,6 +88,7 @@ def create_order(
     "items": payload.items or [],
     "subtotal": subtotal,
     "shipping_fee": shipping_fee,
+    "tax_amount": tax_amount,
     "total": total,
     "currency": "IDR",
     "payment_method": payload.payment_method,
