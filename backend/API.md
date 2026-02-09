@@ -272,6 +272,36 @@ Request:
 ```
 Response: same as `/shipping/options`.
 
+## CS Chat
+Base path: `/cs`
+Auth: Required.
+
+### POST `/cs/chat`
+Request:
+```json
+{
+  "messages": [
+    { "role": "user", "content": "Halo, status pesanan saya bagaimana?" }
+  ]
+}
+```
+Response:
+```json
+{
+  "message": "Halo, mohon kirim nomor pesanan Anda agar bisa saya bantu cek.",
+  "model": "moonshotai/kimi-k2-instruct",
+  "usage": {
+    "prompt_tokens": 120,
+    "completion_tokens": 32,
+    "total_tokens": 152
+  }
+}
+```
+Notes:
+- Backend locks model to `moonshotai/kimi-k2-instruct`.
+- API key must be configured in env var `GROQ`.
+- Backend applies message-length limits and per-user rate limiting.
+
 ## Orders
 Base path: `/orders`
 Auth: Required.
