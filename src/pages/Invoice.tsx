@@ -41,6 +41,9 @@ const formatDateTime = (value: unknown) => {
   })
 }
 
+const displayValue = (value?: string) =>
+  value && value.trim() ? value : "-"
+
 export function Invoice() {
   const [searchParams] = useSearchParams()
   const orderId = searchParams.get("orderId")?.trim() || ""
@@ -303,23 +306,17 @@ export function Invoice() {
               </p>
               <div className="mt-3 space-y-1 text-xs text-slate-600">
                 <p className="font-semibold text-slate-900">
-                  {address.name || "-"}
+                  {displayValue(address.name)}
                 </p>
-                <p>{address.email || "-"}</p>
-                <p>{address.phone || "-"}</p>
-                <p>
-                  {[
-                    address.addressLine,
-                    address.subdistrict && `Subdistrict ${address.subdistrict}`,
-                    address.district && `District ${address.district}`,
-                    address.city,
-                    address.province,
-                    address.postalCode,
-                    address.country,
-                  ]
-                    .filter(Boolean)
-                    .join(", ") || "-"}
-                </p>
+                <p>Email: {displayValue(address.email)}</p>
+                <p>No Tlpn: {displayValue(address.phone)}</p>
+                <p>Kota / Kabupaten: {displayValue(address.city)}</p>
+                <p>Kecamatan: {displayValue(address.district)}</p>
+                <p>Kelurahan / Desa: {displayValue(address.subdistrict)}</p>
+                <p>Kode Pos: {displayValue(address.postalCode)}</p>
+                <p>Provinsi: {displayValue(address.province)}</p>
+                <p>Negara: {displayValue(address.country)}</p>
+                <p>Detail Alamat: {displayValue(address.addressLine)}</p>
                 {address.notes && (
                   <p className="text-[11px] text-slate-500">
                     Catatan: {address.notes}

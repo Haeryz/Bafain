@@ -152,19 +152,7 @@ export function Pembayaran() {
   const formatIdr = (value: number) =>
     `Rp ${value.toLocaleString("id-ID")}`
 
-  const addressSummary = (() => {
-    const parts = [
-      customer.address,
-      customer.subdistrict && `Subdistrict ${customer.subdistrict}`,
-      customer.district && `District ${customer.district}`,
-      customer.city,
-      customer.province,
-      customer.postal_code,
-      customer.country,
-    ].filter(Boolean)
-    if (parts.length > 0) return parts.join(", ")
-    return "Jl. Merdeka No. 10, Jakarta Pusat, DKI Jakarta, 10110"
-  })()
+  const displayValue = (value: string) => (value?.trim() ? value : "-")
 
   const handleCopyVa = async () => {
     try {
@@ -453,13 +441,20 @@ export function Pembayaran() {
             </div>
 
             <div className="mt-4 space-y-1 text-xs text-slate-600">
-              <p>Nama : {customer.full_name || "John Doe"}</p>
-              <p>No Tlpn : {customer.phone || "+62 812 3456 7890"}</p>
-              <p>Email : {customer.email || "john.doe@example.com"}</p>
+              <p>Nama : {displayValue(customer.full_name)}</p>
+              <p>No Tlpn : {displayValue(customer.phone)}</p>
+              <p>Email : {displayValue(customer.email)}</p>
+              <p>Kota / Kabupaten : {displayValue(customer.city)}</p>
+              <p>Kecamatan : {displayValue(customer.district)}</p>
               <p>
-                Alamat : {addressSummary}
+                Kelurahan / Desa : {displayValue(customer.subdistrict)}
               </p>
-              {customer.notes && <p>Catatan : {customer.notes}</p>}
+              <p>Kode Pos : {displayValue(customer.postal_code)}
+              </p>
+              <p>Provinsi : {displayValue(customer.province)}</p>
+              <p>Negara : {displayValue(customer.country)}</p>
+              <p>Detail Alamat : {displayValue(customer.address)}</p>
+              <p>Catatan : {displayValue(customer.notes)}</p>
               <p>
                 Pengiriman : {selectedShippingDetail} ({selectedShippingLabel})
               </p>

@@ -309,7 +309,7 @@ export function Profile() {
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-slate-600">
-                    Kecamatan (District)
+                    Kecamatan
                   </label>
                   {isEditing ? (
                     <input
@@ -332,7 +332,7 @@ export function Profile() {
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
                   <label className="text-xs font-semibold text-slate-600">
-                    Kelurahan / Desa (Subdistrict)
+                    Kelurahan / Desa
                   </label>
                   {isEditing ? (
                     <input

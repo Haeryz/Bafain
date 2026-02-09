@@ -130,6 +130,32 @@ const getStoredValue = (key: string, fallback: string) => {
   return window.localStorage.getItem(key) || fallback
 }
 
+const defaultCustomer: CustomerInfo = {
+  full_name: "",
+  phone: "",
+  email: "",
+  address: "",
+  city: "",
+  district: "",
+  subdistrict: "",
+  postal_code: "",
+  province: "",
+  country: "Indonesia",
+  notes: "",
+}
+
+const getStoredCustomer = () => {
+  if (typeof window === "undefined") return defaultCustomer
+  const raw = window.localStorage.getItem("bafain:customer")
+  if (!raw) return defaultCustomer
+  try {
+    const parsed = JSON.parse(raw) as Partial<CustomerInfo>
+    return { ...defaultCustomer, ...parsed }
+  } catch {
+    return defaultCustomer
+  }
+}
+
 const getStoredSummary = () => {
   if (typeof window === "undefined") return null
   const raw = window.localStorage.getItem("bafain:checkoutSummary")
@@ -223,19 +249,7 @@ const isDeadlineExpired = (deadline: string | null) => {
 }
 
 export const useCheckoutStore = create<CheckoutStoreState>((set, get) => ({
-  customer: {
-    full_name: "",
-    phone: "",
-    email: "",
-    address: "",
-    city: "",
-    district: "",
-    subdistrict: "",
-    postal_code: "",
-    province: "",
-    country: "Indonesia",
-    notes: "",
-  },
+  customer: getStoredCustomer(),
   paymentMethod: {
     id: getStoredValue("bafain:paymentMethod", "bca"),
     label: getStoredValue("bafain:paymentLabel", "BCA Virtual Account"),
@@ -255,12 +269,19 @@ export const useCheckoutStore = create<CheckoutStoreState>((set, get) => ({
   error: null,
 
   updateCustomerField: (field, value) =>
-    set((state) => ({
-      customer: {
+    set((state) => {
+      const nextCustomer = {
         ...state.customer,
         [field]: value,
-      },
-    })),
+      }
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem(
+          "bafain:customer",
+          JSON.stringify(nextCustomer)
+        )
+      }
+      return { customer: nextCustomer }
+    }),
 
   prefillCustomer: (payload) =>
     set((state) => {
@@ -288,6 +309,9 @@ export const useCheckoutStore = create<CheckoutStoreState>((set, get) => ({
       setIfEmpty("country", payload.country)
       setIfEmpty("notes", payload.notes)
 
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem("bafain:customer", JSON.stringify(next))
+      }
       return { customer: next }
     }),
 
