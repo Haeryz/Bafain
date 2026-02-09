@@ -1,10 +1,20 @@
 import os
+import logging
 import threading
 import time
 from collections import defaultdict, deque
 from typing import Any
 
 from fastapi import HTTPException, status
+from groq import (
+  APIConnectionError,
+  APITimeoutError,
+  AuthenticationError,
+  BadRequestError,
+  NotFoundError,
+  RateLimitError,
+  UnprocessableEntityError,
+)
 
 from lib.firebase_auth import get_user_id
 from models.cs import CsChatRequest, CsChatResponse
@@ -28,6 +38,7 @@ Rules:
 
 _request_logs: dict[str, deque[float]] = defaultdict(deque)
 _request_logs_lock = threading.Lock()
+logger = logging.getLogger("bafain.cs")
 
 
 def _enforce_rate_limit(user_id: str) -> None:
@@ -122,7 +133,38 @@ def cs_chat(access_token: str, payload: CsChatRequest) -> CsChatResponse:
     )
   except HTTPException:
     raise
+  except AuthenticationError as exc:
+    logger.warning("Groq authentication error: %s", str(exc))
+    raise HTTPException(
+      status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+      detail="Konfigurasi GROQ tidak valid di backend.",
+    ) from exc
+  except RateLimitError as exc:
+    logger.warning("Groq rate limit error: %s", str(exc))
+    raise HTTPException(
+      status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+      detail="Layanan CS sedang padat. Coba lagi sebentar.",
+    ) from exc
+  except NotFoundError as exc:
+    logger.warning("Groq model not found: %s", str(exc))
+    raise HTTPException(
+      status_code=status.HTTP_502_BAD_GATEWAY,
+      detail=f"Model `{CS_MODEL}` tidak tersedia di Groq.",
+    ) from exc
+  except (BadRequestError, UnprocessableEntityError) as exc:
+    logger.warning("Groq bad request: %s", str(exc))
+    raise HTTPException(
+      status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+      detail="Permintaan CS tidak valid untuk model Groq.",
+    ) from exc
+  except (APIConnectionError, APITimeoutError) as exc:
+    logger.warning("Groq connection error: %s", str(exc))
+    raise HTTPException(
+      status_code=status.HTTP_502_BAD_GATEWAY,
+      detail="Gagal terhubung ke Groq. Periksa koneksi internet backend.",
+    ) from exc
   except Exception as exc:
+    logger.exception("Unexpected Groq error")
     raise HTTPException(
       status_code=status.HTTP_502_BAD_GATEWAY,
       detail="Layanan CS sedang bermasalah, coba beberapa saat lagi.",
