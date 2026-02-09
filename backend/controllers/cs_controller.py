@@ -65,9 +65,9 @@ def _get_groq_client():
 def _build_messages(payload: CsChatRequest) -> list[dict[str, str]]:
   # Only use user messages from client input to avoid role spoofing.
   trimmed = payload.messages[-MAX_HISTORY_MESSAGES:]
-  sanitized: list[dict[str, str]] = []
+  sanitized_reversed: list[dict[str, str]] = []
   total_chars = 0
-  for item in trimmed:
+  for item in reversed(trimmed):
     if item.role != "user":
       continue
     content = item.content.strip()
@@ -76,7 +76,9 @@ def _build_messages(payload: CsChatRequest) -> list[dict[str, str]]:
     total_chars += len(content)
     if total_chars > MAX_TOTAL_CONTENT_CHARS:
       break
-    sanitized.append({"role": item.role, "content": content})
+    sanitized_reversed.append({"role": item.role, "content": content})
+
+  sanitized = list(reversed(sanitized_reversed))
 
   if not sanitized:
     raise HTTPException(
