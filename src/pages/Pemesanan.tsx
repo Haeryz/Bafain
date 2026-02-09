@@ -39,7 +39,15 @@ export function Pemesanan() {
   const [showAllPayments, setShowAllPayments] = useState(false)
   const { isLoggedIn } = useAuthStore()
   const { profile, addresses, loadProfile } = useProfileStore()
-  const { items, subtotal, isLoading, error, loadCart } = useCartStore()
+  const {
+    items,
+    subtotal,
+    isLoading,
+    error,
+    loadCart,
+    updateItem,
+    removeItem,
+  } = useCartStore()
   const {
     customer,
     paymentMethod,
@@ -101,6 +109,7 @@ export function Pemesanan() {
     cartSummaryItems.length > 0 ? cartSummaryItems : fallbackSummaryItems
   const cartSubtotal =
     cartSummaryItems.length > 0 ? subtotal : fallbackSubtotal
+  const canEditCart = cartSummaryItems.length > 0
   const [countryOptions, setCountryOptions] = useState<CountryOption[]>(() =>
     getCountryOptions()
   )
@@ -184,6 +193,25 @@ export function Pemesanan() {
 
   const handlePackagingChange = (optionId: string) => {
     setPackagingOption(optionId)
+  }
+
+  const handleDecreaseItem = async (itemId: string, qty: number) => {
+    if (isLoading) return
+    if (qty <= 1) {
+      await removeItem(itemId)
+      return
+    }
+    await updateItem(itemId, qty - 1)
+  }
+
+  const handleRemoveItem = async (itemId: string) => {
+    if (isLoading) return
+    await removeItem(itemId)
+  }
+
+  const handleIncreaseItem = async (itemId: string, qty: number) => {
+    if (isLoading) return
+    await updateItem(itemId, qty + 1)
   }
 
   const handlePlaceOrder = async () => {
@@ -601,13 +629,52 @@ export function Pemesanan() {
                 <p className="text-xs text-red-500">{checkoutError}</p>
               )}
               {summaryItems.map((item) => (
-                <div key={item.id} className="flex items-center justify-between">
-                  <span>
-                    {item.title}
-                    <span className="ml-2 text-xs text-slate-400">
-                      x{item.qty}
-                    </span>
-                  </span>
+                <div
+                  key={item.id}
+                  className="group flex items-start justify-between gap-4 rounded-xl border border-slate-200 bg-white px-4 py-3 transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md hover:cursor-pointer"
+                >
+                  <div>
+                    <p className="text-sm text-slate-700">
+                      {item.title}
+                      <span className="ml-2 text-xs text-slate-400">
+                        x{item.qty}
+                      </span>
+                    </p>
+                    <p className="mt-1 text-xs text-slate-500">
+                      Harga satuan: {formatIdr(item.price_idr)}
+                    </p>
+                    {canEditCart && (
+                      <div className="mt-2 flex items-center gap-2 text-xs text-slate-500">
+                        <button
+                          type="button"
+                          onClick={() => handleDecreaseItem(item.id, item.qty)}
+                          disabled={isLoading}
+                          className="inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-full border border-slate-200 text-sm font-semibold text-slate-600 transition hover:border-blue-200 hover:text-blue-600 disabled:cursor-not-allowed disabled:opacity-60"
+                          aria-label={`Kurangi ${item.title}`}
+                        >
+                          -
+                        </button>
+                        <span>Qty {item.qty}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleIncreaseItem(item.id, item.qty)}
+                          disabled={isLoading}
+                          className="inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-full border border-slate-200 text-sm font-semibold text-slate-600 transition hover:border-blue-200 hover:text-blue-600 disabled:cursor-not-allowed disabled:opacity-60"
+                          aria-label={`Tambah ${item.title}`}
+                        >
+                          +
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveItem(item.id)}
+                          disabled={isLoading}
+                          className="ml-2 inline-flex cursor-pointer items-center rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-[11px] font-semibold text-rose-600 transition hover:border-rose-300 hover:bg-rose-100 hover:text-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          Hapus
+                        </button>
+                      </div>
+                    )}
+                  </div>
                   <span className="font-semibold text-slate-900">
                     {formatIdr(item.price_idr * item.qty)}
                   </span>
