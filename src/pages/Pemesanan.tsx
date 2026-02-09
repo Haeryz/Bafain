@@ -3,6 +3,8 @@ import PageLayout from "@/components/PageLayout"
 import { useNavigate } from "react-router-dom"
 import { useCartStore } from "@/stores/cart/useCartStore"
 import { useCheckoutStore } from "@/stores/checkout/useCheckoutStore"
+import { useAuthStore } from "@/stores/auth/useAuthStore"
+import { useProfileStore } from "@/stores/profile/useProfileStore"
 import {
   fetchCountryOptions,
   getCountryOptions,
@@ -35,6 +37,8 @@ const calculateTaxAmount = (baseTotal: number) =>
 export function Pemesanan() {
   const navigate = useNavigate()
   const [showAllPayments, setShowAllPayments] = useState(false)
+  const { isLoggedIn } = useAuthStore()
+  const { profile, addresses, loadProfile } = useProfileStore()
   const { items, subtotal, isLoading, error, loadCart } = useCartStore()
   const {
     customer,
@@ -49,6 +53,7 @@ export function Pemesanan() {
     isLoading: isCheckoutLoading,
     error: checkoutError,
     updateCustomerField,
+    prefillCustomer,
     setPaymentMethod,
     setExpeditionOption,
     setPackagingOption,
@@ -65,6 +70,11 @@ export function Pemesanan() {
   useEffect(() => {
     loadShippingOptions()
   }, [loadShippingOptions])
+
+  useEffect(() => {
+    if (!isLoggedIn) return
+    loadProfile()
+  }, [isLoggedIn, loadProfile])
 
   useEffect(() => {
     calculateSummary()
@@ -95,6 +105,11 @@ export function Pemesanan() {
     getCountryOptions()
   )
 
+  const defaultAddress = useMemo(() => {
+    if (!addresses.length) return null
+    return addresses.find((address) => address.is_default) || addresses[0]
+  }, [addresses])
+
   useEffect(() => {
     let isActive = true
 
@@ -108,6 +123,36 @@ export function Pemesanan() {
       isActive = false
     }
   }, [])
+
+  useEffect(() => {
+    if (!isLoggedIn) return
+    const metadata = (defaultAddress?.metadata ?? {}) as Record<
+      string,
+      unknown
+    >
+    const district =
+      typeof metadata["district"] === "string" ? metadata["district"] : ""
+    const subdistrict =
+      typeof metadata["subdistrict"] === "string"
+        ? metadata["subdistrict"]
+        : ""
+
+    prefillCustomer({
+      full_name:
+        defaultAddress?.recipient_name || profile.fullName || "",
+      email: defaultAddress?.email || profile.email || "",
+      phone: defaultAddress?.phone || profile.phone || "",
+      address: defaultAddress?.address_line1 || profile.address || "",
+      city: defaultAddress?.city || profile.city || "",
+      province: defaultAddress?.province || profile.province || "",
+      postal_code:
+        defaultAddress?.postal_code || profile.postalCode || "",
+      country: defaultAddress?.country || profile.country || "",
+      notes: defaultAddress?.notes || profile.notes || "",
+      district: district || profile.district || "",
+      subdistrict: subdistrict || profile.subdistrict || "",
+    })
+  }, [isLoggedIn, defaultAddress, profile, prefillCustomer])
 
   const activeShipping =
     shippingOptions.find((option) => option.id === selectedShippingId) ||

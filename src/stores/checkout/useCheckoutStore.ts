@@ -69,6 +69,7 @@ type CheckoutStoreState = {
   isLoading: boolean
   error: string | null
   updateCustomerField: (field: keyof CustomerInfo, value: string) => void
+  prefillCustomer: (payload: Partial<CustomerInfo>) => void
   setPaymentMethod: (method: PaymentMethod) => void
   setExpeditionOption: (optionId: string) => void
   setPackagingOption: (optionId: string) => void
@@ -260,6 +261,35 @@ export const useCheckoutStore = create<CheckoutStoreState>((set, get) => ({
         [field]: value,
       },
     })),
+
+  prefillCustomer: (payload) =>
+    set((state) => {
+      const next = { ...state.customer }
+      const setIfEmpty = (field: keyof CustomerInfo, value?: string | null) => {
+        if (typeof value !== "string" || !value.trim()) return
+        const current = next[field]
+        const isEmpty =
+          !current.trim() ||
+          (field === "country" && current.trim().toLowerCase() === "indonesia")
+        if (isEmpty) {
+          next[field] = value
+        }
+      }
+
+      setIfEmpty("full_name", payload.full_name)
+      setIfEmpty("phone", payload.phone)
+      setIfEmpty("email", payload.email)
+      setIfEmpty("address", payload.address)
+      setIfEmpty("city", payload.city)
+      setIfEmpty("district", payload.district)
+      setIfEmpty("subdistrict", payload.subdistrict)
+      setIfEmpty("postal_code", payload.postal_code)
+      setIfEmpty("province", payload.province)
+      setIfEmpty("country", payload.country)
+      setIfEmpty("notes", payload.notes)
+
+      return { customer: next }
+    }),
 
   setPaymentMethod: (method) => {
     if (typeof window !== "undefined") {

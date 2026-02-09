@@ -18,6 +18,13 @@ type ProfileState = {
   phone: string
   company: string
   address: string
+  city: string
+  district: string
+  subdistrict: string
+  postalCode: string
+  province: string
+  country: string
+  notes: string
   joinedDate: string
 }
 
@@ -43,6 +50,13 @@ const emptyProfile: ProfileState = {
   phone: "",
   company: "",
   address: "",
+  city: "",
+  district: "",
+  subdistrict: "",
+  postalCode: "",
+  province: "",
+  country: "Indonesia",
+  notes: "",
   joinedDate: "",
 }
 
@@ -69,6 +83,13 @@ const mapUserToProfile = (
   phone: typeof user?.phone_number === "string" ? user.phone_number : "",
   company: "",
   address: "",
+  city: "",
+  district: "",
+  subdistrict: "",
+  postalCode: "",
+  province: "",
+  country: "Indonesia",
+  notes: "",
   joinedDate:
     typeof user?.created_at === "string"
       ? normalizeDateInput(user.created_at)
@@ -102,6 +123,13 @@ const mapResponseToProfile = (
         : fallback.phone,
     company: typeof profile.company === "string" ? profile.company : fallback.company,
     address: typeof profile.address === "string" ? profile.address : fallback.address,
+    city: fallback.city,
+    district: fallback.district,
+    subdistrict: fallback.subdistrict,
+    postalCode: fallback.postalCode,
+    province: fallback.province,
+    country: fallback.country,
+    notes: fallback.notes,
     joinedDate:
       typeof profile.joined_date === "string"
         ? normalizeDateInput(profile.joined_date)
@@ -114,19 +142,6 @@ const mapResponseToProfile = (
 const pickDefaultAddress = (addresses: AddressPayload[]) => {
   if (!addresses.length) return null
   return addresses.find((address) => address.is_default) || addresses[0]
-}
-
-const formatAddress = (address: AddressPayload | null) => {
-  if (!address) return ""
-  const parts = [
-    address.address_line1,
-    address.address_line2,
-    address.city,
-    address.province,
-    address.postal_code,
-    address.country,
-  ]
-  return parts.filter((part) => Boolean(part && `${part}`.trim())).join(", ")
 }
 
 export const useProfileStore = create<ProfileStoreState>((set, get) => ({
@@ -147,6 +162,13 @@ export const useProfileStore = create<ProfileStoreState>((set, get) => ({
           phone: state.profile.phone || fallback.phone,
           company: state.profile.company || fallback.company,
           address: state.profile.address || fallback.address,
+          city: state.profile.city || fallback.city,
+          district: state.profile.district || fallback.district,
+          subdistrict: state.profile.subdistrict || fallback.subdistrict,
+          postalCode: state.profile.postalCode || fallback.postalCode,
+          province: state.profile.province || fallback.province,
+          country: state.profile.country || fallback.country,
+          notes: state.profile.notes || fallback.notes,
           joinedDate: state.profile.joinedDate || fallback.joinedDate,
         },
       }
@@ -178,14 +200,48 @@ export const useProfileStore = create<ProfileStoreState>((set, get) => ({
         const addressResponse = await listAddresses()
         const addresses = addressResponse.addresses || []
         const defaultAddress = pickDefaultAddress(addresses)
-        const addressLabel = formatAddress(defaultAddress)
-        set((state) => ({
-          addresses,
-          profile: {
-            ...state.profile,
-            address: state.profile.address || addressLabel,
-          },
-        }))
+        const metadata = (defaultAddress?.metadata ?? {}) as Record<
+          string,
+          unknown
+        >
+        const district =
+          typeof metadata["district"] === "string" ? metadata["district"] : ""
+        const subdistrict =
+          typeof metadata["subdistrict"] === "string"
+            ? metadata["subdistrict"]
+            : ""
+        set((state) => {
+          const next = { ...state.profile }
+          const setIfEmpty = (
+            field: keyof ProfileState,
+            value?: string | null,
+            treatIndonesiaEmpty = false
+          ) => {
+            if (typeof value !== "string" || !value.trim()) return
+            const current = next[field] as string
+            const isEmpty =
+              !current.trim() ||
+              (treatIndonesiaEmpty &&
+                current.trim().toLowerCase() === "indonesia")
+            if (isEmpty) {
+              next[field] = value
+            }
+          }
+
+          setIfEmpty("fullName", defaultAddress?.recipient_name)
+          setIfEmpty("email", defaultAddress?.email)
+          setIfEmpty("phone", defaultAddress?.phone)
+          setIfEmpty("address", defaultAddress?.address_line1)
+          setIfEmpty("city", defaultAddress?.city)
+          setIfEmpty("district", district)
+          setIfEmpty("subdistrict", subdistrict)
+          setIfEmpty("postalCode", defaultAddress?.postal_code)
+          setIfEmpty("province", defaultAddress?.province)
+          setIfEmpty("country", defaultAddress?.country, true)
+          setIfEmpty("notes", defaultAddress?.notes)
+
+          return { addresses, profile: next }
+        })
       } catch (error) {
         set({ errorMessage: getErrorMessage(error) })
       }
@@ -229,8 +285,17 @@ export const useProfileStore = create<ProfileStoreState>((set, get) => ({
           email: profile.email.trim() || null,
           phone: profile.phone.trim() || null,
           address_line1: addressText,
+          city: profile.city.trim() || null,
+          province: profile.province.trim() || null,
+          postal_code: profile.postalCode.trim() || null,
+          country: profile.country.trim() || null,
+          notes: profile.notes.trim() || null,
           is_default: true,
-          metadata: { source: "profile" },
+          metadata: {
+            source: "profile",
+            district: profile.district.trim() || null,
+            subdistrict: profile.subdistrict.trim() || null,
+          },
         }
         try {
           if (defaultAddress?.id) {

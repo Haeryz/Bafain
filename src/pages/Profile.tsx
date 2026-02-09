@@ -1,20 +1,20 @@
-import { useEffect, useMemo } from "react"
+import { useEffect, useState } from "react"
 import {
-  Calendar,
   Check,
   Pencil,
-  Mail,
-  MapPin,
-  Phone,
   ShoppingBag,
   User,
-  Building2,
   ClipboardList,
 } from "lucide-react"
 import PageLayout from "@/components/PageLayout"
 import { Link } from "react-router-dom"
 import { useAuthStore } from "@/stores/auth/useAuthStore"
 import { useProfileStore } from "@/stores/profile/useProfileStore"
+import {
+  fetchCountryOptions,
+  getCountryOptions,
+  type CountryOption,
+} from "@/lib/countries"
 
 const stats = [
   {
@@ -71,17 +71,9 @@ export function Profile() {
     loadProfile,
     saveProfile,
   } = useProfileStore()
-
-  const formattedJoinedDate = useMemo(() => {
-    if (!profile.joinedDate) return "-"
-    const date = new Date(profile.joinedDate)
-    if (Number.isNaN(date.getTime())) return profile.joinedDate
-    return date.toLocaleDateString("id-ID", {
-      day: "2-digit",
-      month: "long",
-      year: "numeric",
-    })
-  }, [profile.joinedDate])
+  const [countryOptions, setCountryOptions] = useState<CountryOption[]>(() =>
+    getCountryOptions()
+  )
 
   useEffect(() => {
     if (!showUpdated) return
@@ -97,6 +89,20 @@ export function Profile() {
     if (!isLoggedIn) return
     loadProfile()
   }, [isLoggedIn, loadProfile])
+
+  useEffect(() => {
+    let isActive = true
+
+    fetchCountryOptions().then((options) => {
+      if (isActive) {
+        setCountryOptions(options)
+      }
+    })
+
+    return () => {
+      isActive = false
+    }
+  }, [])
 
   const handleToggleEdit = async () => {
     if (!isLoggedIn || isSaving || isLoading) return
@@ -168,127 +174,225 @@ export function Profile() {
               </div>
             )}
 
-            <div className="mt-8 grid gap-4 md:grid-cols-2">
-              <div>
-                <p className="flex items-center gap-2 text-xs font-semibold text-slate-500">
-                  <User className="h-4 w-4" />
-                  Nama Lengkap
-                </p>
-                {isEditing ? (
-                  <input
-                    type="text"
-                    value={profile.fullName}
-                    onChange={(event) =>
-                      updateField("fullName", event.target.value)
-                    }
-                    className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none focus:border-blue-500"
-                  />
-                ) : (
-                  <div className="mt-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
-                    {profile.fullName}
-                  </div>
-                )}
+            <div className="mt-6 space-y-4 text-sm text-slate-600">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <label className="text-xs font-semibold text-slate-600">
+                    Nama Lengkap
+                  </label>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      placeholder="John Doe"
+                      value={profile.fullName}
+                      onChange={(event) =>
+                        updateField("fullName", event.target.value)
+                      }
+                      className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-blue-500"
+                    />
+                  ) : (
+                    <div className="mt-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+                      {profile.fullName || "-"}
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-slate-600">
+                    No Telepon
+                  </label>
+                  {isEditing ? (
+                    <input
+                      type="tel"
+                      placeholder="+62 812 3456 7890"
+                      value={profile.phone}
+                      onChange={(event) =>
+                        updateField("phone", event.target.value)
+                      }
+                      className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-blue-500"
+                    />
+                  ) : (
+                    <div className="mt-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+                      {profile.phone || "-"}
+                    </div>
+                  )}
+                </div>
               </div>
+
               <div>
-                <p className="flex items-center gap-2 text-xs font-semibold text-slate-500">
-                  <Mail className="h-4 w-4" />
+                <label className="text-xs font-semibold text-slate-600">
                   Email
-                </p>
+                </label>
                 {isEditing ? (
                   <input
                     type="email"
+                    placeholder="john.doe@example.com"
                     value={profile.email}
                     onChange={(event) =>
                       updateField("email", event.target.value)
                     }
-                    className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none focus:border-blue-500"
+                    className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-blue-500"
                   />
                 ) : (
                   <div className="mt-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
-                    {profile.email}
+                    {profile.email || "-"}
                   </div>
                 )}
               </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <label className="text-xs font-semibold text-slate-600">
+                    Negara
+                  </label>
+                  {isEditing ? (
+                    <select
+                      value={profile.country}
+                      onChange={(event) =>
+                        updateField("country", event.target.value)
+                      }
+                      className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-blue-500"
+                    >
+                      {countryOptions.map((option) => (
+                        <option key={option.code} value={option.name}>
+                          {option.name}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <div className="mt-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+                      {profile.country || "-"}
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-slate-600">
+                    Provinsi
+                  </label>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      placeholder="DKI Jakarta"
+                      value={profile.province}
+                      onChange={(event) =>
+                        updateField("province", event.target.value)
+                      }
+                      className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-blue-500"
+                    />
+                  ) : (
+                    <div className="mt-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+                      {profile.province || "-"}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <label className="text-xs font-semibold text-slate-600">
+                    Kota / Kabupaten
+                  </label>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      placeholder="Jakarta"
+                      value={profile.city}
+                      onChange={(event) =>
+                        updateField("city", event.target.value)
+                      }
+                      className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-blue-500"
+                    />
+                  ) : (
+                    <div className="mt-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+                      {profile.city || "-"}
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-slate-600">
+                    Kecamatan (District)
+                  </label>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      placeholder="Kemayoran"
+                      value={profile.district}
+                      onChange={(event) =>
+                        updateField("district", event.target.value)
+                      }
+                      className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-blue-500"
+                    />
+                  ) : (
+                    <div className="mt-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+                      {profile.district || "-"}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <label className="text-xs font-semibold text-slate-600">
+                    Kelurahan / Desa (Subdistrict)
+                  </label>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      placeholder="Kebon Kosong"
+                      value={profile.subdistrict}
+                      onChange={(event) =>
+                        updateField("subdistrict", event.target.value)
+                      }
+                      className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-blue-500"
+                    />
+                  ) : (
+                    <div className="mt-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+                      {profile.subdistrict || "-"}
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-slate-600">
+                    Kode Pos
+                  </label>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      placeholder="10110"
+                      value={profile.postalCode}
+                      onChange={(event) =>
+                        updateField("postalCode", event.target.value)
+                      }
+                      className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-blue-500"
+                    />
+                  ) : (
+                    <div className="mt-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+                      {profile.postalCode || "-"}
+                    </div>
+                  )}
+                </div>
+              </div>
+
               <div>
-                <p className="flex items-center gap-2 text-xs font-semibold text-slate-500">
-                  <Phone className="h-4 w-4" />
-                  Nomor Telepon
-                </p>
+                <label className="text-xs font-semibold text-slate-600">
+                  Detail Alamat
+                </label>
                 {isEditing ? (
-                  <input
-                    type="tel"
-                    value={profile.phone}
-                    onChange={(event) =>
-                      updateField("phone", event.target.value)
-                    }
-                    className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none focus:border-blue-500"
-                  />
-                ) : (
-                  <div className="mt-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
-                    {profile.phone}
-                  </div>
-                )}
-              </div>
-              <div>
-                <p className="flex items-center gap-2 text-xs font-semibold text-slate-500">
-                  <Building2 className="h-4 w-4" />
-                  Perusahaan
-                </p>
-                {isEditing ? (
-                  <input
-                    type="text"
-                    value={profile.company}
-                    onChange={(event) =>
-                      updateField("company", event.target.value)
-                    }
-                    className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none focus:border-blue-500"
-                  />
-                ) : (
-                  <div className="mt-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
-                    {profile.company}
-                  </div>
-                )}
-              </div>
-              <div className="md:col-span-2">
-                <p className="flex items-center gap-2 text-xs font-semibold text-slate-500">
-                  <MapPin className="h-4 w-4" />
-                  Alamat
-                </p>
-                {isEditing ? (
-                  <input
-                    type="text"
+                  <textarea
+                    rows={3}
+                    placeholder="Nama jalan, nomor, RT/RW, patokan"
                     value={profile.address}
                     onChange={(event) =>
                       updateField("address", event.target.value)
                     }
-                    className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none focus:border-blue-500"
+                    className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-blue-500"
                   />
                 ) : (
                   <div className="mt-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
-                    {profile.address}
+                    {profile.address || "-"}
                   </div>
                 )}
               </div>
-              <div className="md:col-span-2">
-                <p className="flex items-center gap-2 text-xs font-semibold text-slate-500">
-                  <Calendar className="h-4 w-4" />
-                  Tanggal Bergabung
-                </p>
-                {isEditing ? (
-                  <input
-                    type="date"
-                    value={profile.joinedDate}
-                    onChange={(event) =>
-                      updateField("joinedDate", event.target.value)
-                    }
-                    className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none focus:border-blue-500"
-                  />
-                ) : (
-                  <div className="mt-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
-                    {formattedJoinedDate}
-                  </div>
-                )}
-              </div>
+
             </div>
           </div>
 
