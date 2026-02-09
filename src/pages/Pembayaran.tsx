@@ -3,7 +3,6 @@ import { Link, useNavigate } from "react-router-dom"
 import PageLayout from "@/components/PageLayout"
 import { useCartStore } from "@/stores/cart/useCartStore"
 import { useCheckoutStore } from "@/stores/checkout/useCheckoutStore"
-import { getInvoice } from "@/lib/ordersApi"
 
 const paymentSteps = [
   {
@@ -32,7 +31,6 @@ export function Pembayaran() {
   const navigate = useNavigate()
   const [showCopied, setShowCopied] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
-  const [isDownloadingInvoice, setIsDownloadingInvoice] = useState(false)
   const [invoiceError, setInvoiceError] = useState<string | null>(null)
   const [now, setNow] = useState(() => Date.now())
   const { items, subtotal, isLoading, error, loadCart } = useCartStore()
@@ -227,33 +225,16 @@ export function Pembayaran() {
   }, [paymentDeadline, now])
 
   const isExpired = remainingMs !== null && remainingMs <= 0
-  const handleDownloadInvoice = async () => {
+  const handleDownloadInvoice = () => {
     if (!orderId) {
       setInvoiceError("ID pesanan belum tersedia.")
       return
     }
-    const invoiceTab = window.open("", "_blank")
+    setInvoiceError(null)
+    const url = `/invoice?orderId=${encodeURIComponent(orderId)}`
+    const invoiceTab = window.open(url, "_blank", "noopener,noreferrer")
     if (!invoiceTab) {
       setInvoiceError("Pop-up diblokir oleh browser. Izinkan pop-up dulu.")
-      return
-    }
-    invoiceTab.document.write(
-      "<!doctype html><title>Invoice</title><p>Menyiapkan invoice...</p>"
-    )
-    setIsDownloadingInvoice(true)
-    setInvoiceError(null)
-    try {
-      const response = await getInvoice(orderId)
-      invoiceTab.location.href = response.download_url
-    } catch (err) {
-      invoiceTab.close()
-      setInvoiceError(
-        err instanceof Error && err.message
-          ? err.message
-          : "Gagal mengunduh invoice."
-      )
-    } finally {
-      setIsDownloadingInvoice(false)
     }
   }
 
@@ -530,10 +511,9 @@ export function Pembayaran() {
               <button
                 type="button"
                 onClick={handleDownloadInvoice}
-                disabled={isDownloadingInvoice}
                 className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-blue-600 px-5 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-70"
               >
-                {isDownloadingInvoice ? "Menyiapkan..." : "Download Invoice"}
+                Download Invoice
               </button>
             </div>
 

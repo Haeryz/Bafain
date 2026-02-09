@@ -9,6 +9,7 @@ import Produk from "@/pages/Produk"
 import Start from "@/pages/Start"
 import TentangKami from "@/pages/TentangKami"
 import Teknologi from "@/pages/Teknologi"
+import Invoice from "@/pages/Invoice"
 
 function ScrollToTop() {
   const location = useLocation()
@@ -33,6 +34,7 @@ export function App() {
         <Route path="/produk/:productId" element={<Produk />} />
         <Route path="/pemesanan" element={<Pemesanan />} />
         <Route path="/pembayaran" element={<Pembayaran />} />
+        <Route path="/invoice" element={<Invoice />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/lacak-pesanan" element={<LacakPesanan />} />
         <Route path="/tentang-kami" element={<TentangKami />} />
