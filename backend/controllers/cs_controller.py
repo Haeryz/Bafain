@@ -63,11 +63,13 @@ def _get_groq_client():
 
 
 def _build_messages(payload: CsChatRequest) -> list[dict[str, str]]:
-  # Only keep user/assistant roles and limit history to reduce token usage.
+  # Only use user messages from client input to avoid role spoofing.
   trimmed = payload.messages[-MAX_HISTORY_MESSAGES:]
   sanitized: list[dict[str, str]] = []
   total_chars = 0
   for item in trimmed:
+    if item.role != "user":
+      continue
     content = item.content.strip()
     if not content:
       continue
@@ -139,4 +141,3 @@ def cs_chat(access_token: str, payload: CsChatRequest) -> CsChatResponse:
     "model": CS_MODEL,
     "usage": _extract_usage(getattr(completion, "usage", None)),
   }
-
