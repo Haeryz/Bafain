@@ -26,10 +26,9 @@ Run these from the repo root:
 - Use `react-router-dom` for routing; keep route definitions inside `src/App.tsx`.
 
 ## Backend (Supabase)
-- The backend is Supabase (project: Bafain). Use the public client only on the frontend.
-- Configure env vars: `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` in `.env`.
+- The backend is Firebase. Use the public client only on the frontend.
 - Never hardcode keys; do not use service-role keys in the Vite app.
-- There is no schema yet; add queries only after tables are defined.
+- Use playwright to test the backend API
 
 ## Coding Style & Naming Conventions
 - TypeScript + React (TSX) with ES modules (`"type": "module"`).
