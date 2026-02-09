@@ -21,6 +21,62 @@ export function PageLayout({ children }: PageLayoutProps) {
   const location = useLocation()
 
   useEffect(() => {
+    if (!isLoggedIn) return
+    const IDLE_TIMEOUT_MS = 60 * 60 * 1000
+    let lastActive = Date.now()
+    let timeoutId: number | null = null
+
+    const scheduleCheck = () => {
+      if (timeoutId !== null) {
+        window.clearTimeout(timeoutId)
+      }
+      timeoutId = window.setTimeout(() => {
+        const idleFor = Date.now() - lastActive
+        if (idleFor >= IDLE_TIMEOUT_MS) {
+          logout()
+          return
+        }
+        scheduleCheck()
+      }, IDLE_TIMEOUT_MS)
+    }
+
+    const markActive = () => {
+      lastActive = Date.now()
+      scheduleCheck()
+    }
+
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        markActive()
+      }
+    }
+
+    markActive()
+
+    const events = [
+      "mousemove",
+      "mousedown",
+      "keydown",
+      "touchstart",
+      "scroll",
+    ] as const
+    events.forEach((event) =>
+      window.addEventListener(event, markActive, { passive: true })
+    )
+    document.addEventListener("visibilitychange", handleVisibility)
+
+    return () => {
+      if (timeoutId !== null) {
+        window.clearTimeout(timeoutId)
+      }
+      events.forEach((event) =>
+        window.removeEventListener(event, markActive)
+      )
+      document.removeEventListener("visibilitychange", handleVisibility)
+    }
+  }, [isLoggedIn, logout])
+
+  useEffect(() => {
     if (loginOpen) {
       const originalOverflow = document.body.style.overflow
       document.body.style.overflow = "hidden"
