@@ -76,6 +76,7 @@ async function request<T>(path: string, options?: RequestOptions) {
 export type CheckoutSummaryResponse = {
   subtotal: number
   shipping_fee: number
+  tax_amount: number
   total: number
   currency: string
 }
