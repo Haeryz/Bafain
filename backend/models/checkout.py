@@ -12,6 +12,7 @@ class CheckoutSummaryRequest(BaseModel):
 class CheckoutSummaryResponse(BaseModel):
   subtotal: int
   shipping_fee: int
+  tax_amount: int
   total: int
   currency: str = "IDR"
 
