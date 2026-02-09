@@ -108,6 +108,12 @@ export type OrderActionResponse = {
   message: string
 }
 
+export type InvoiceResponse = {
+  order_id: string
+  download_url: string
+  expires_in: number
+}
+
 export function createOrder(payload: {
   address: Record<string, unknown>
   shipping_option: Record<string, unknown>
@@ -149,4 +155,8 @@ export function checkPayment(orderId: string) {
   return request<OrderActionResponse>(`/orders/${orderId}/check-payment`, {
     method: "POST",
   })
+}
+
+export function getInvoice(orderId: string) {
+  return request<InvoiceResponse>(`/orders/${orderId}/invoice`)
 }
