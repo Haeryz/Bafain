@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
 import AppFooter from "./AppFooter"
 import AppHeader from "./AppHeader"
+import CsFloatingButton from "./CsFloatingButton"
 import LoginModal from "./LoginModal"
 import { useAuthStore } from "@/stores/auth/useAuthStore"
 
@@ -91,6 +92,7 @@ export function PageLayout({ children }: PageLayoutProps) {
       />
       <main className="flex-1">{children}</main>
       <AppFooter />
+      <CsFloatingButton />
       <LoginModal
         open={loginOpen}
         mode={loginMode}
