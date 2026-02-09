@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react"
-import { useNavigate } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import PageLayout from "@/components/PageLayout"
 import { useCartStore } from "@/stores/cart/useCartStore"
 import { useCheckoutStore } from "@/stores/checkout/useCheckoutStore"
@@ -251,6 +251,24 @@ export function Pembayaran() {
       )}
       <section className="mx-auto w-full max-w-6xl px-6 pb-20 pt-12 md:pt-16">
         <div>
+          <Link
+            to="/pemesanan"
+            className="mb-4 inline-flex items-center gap-2 text-xs font-semibold text-slate-600 transition hover:text-blue-600"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              className="h-4 w-4"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
+            Kembali ke Pemesanan
+          </Link>
           <p className="text-sm font-semibold text-slate-400">
             <a
               href="/pemesanan"
