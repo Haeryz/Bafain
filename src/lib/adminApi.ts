@@ -115,6 +115,11 @@ export type AdminStatusCount = {
   count: number
 }
 
+export type AdminMonthlySales = {
+  year: number
+  monthly_totals: number[]
+}
+
 export type AdminRecentOrder = {
   id: string
   status?: string | null
@@ -128,6 +133,7 @@ export type AdminRecentOrder = {
 export type AdminDashboardResponse = {
   summary: AdminDashboardSummary
   orders_by_status: AdminStatusCount[]
+  monthly_sales: AdminMonthlySales[]
   recent_orders: AdminRecentOrder[]
 }
 

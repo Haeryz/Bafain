@@ -27,9 +27,15 @@ class AdminStatusCount(BaseModel):
   count: int
 
 
+class AdminMonthlySales(BaseModel):
+  year: int
+  monthly_totals: list[int]
+
+
 class AdminDashboardResponse(BaseModel):
   summary: AdminDashboardSummary
   orders_by_status: list[AdminStatusCount]
+  monthly_sales: list[AdminMonthlySales]
   recent_orders: list[dict[str, Any]]
 
 
