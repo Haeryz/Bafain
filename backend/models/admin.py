@@ -3,6 +3,36 @@ from typing import Any, Optional
 from pydantic import BaseModel, Field
 
 
+class AdminIdentity(BaseModel):
+  uid: str
+  role: str
+  email: str = ""
+  display_name: str = ""
+
+
+class AdminSessionResponse(BaseModel):
+  admin: AdminIdentity
+
+
+class AdminDashboardSummary(BaseModel):
+  total_orders: int
+  paid_orders: int
+  pending_orders: int
+  products_count: int
+  total_revenue: int
+
+
+class AdminStatusCount(BaseModel):
+  status: str
+  count: int
+
+
+class AdminDashboardResponse(BaseModel):
+  summary: AdminDashboardSummary
+  orders_by_status: list[AdminStatusCount]
+  recent_orders: list[dict[str, Any]]
+
+
 class AdminOrderListResponse(BaseModel):
   orders: list[dict[str, Any]]
   page: int

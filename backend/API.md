@@ -161,7 +161,9 @@ Response:
 
 ## Products
 Base path: `/products`
-Auth: Not required.
+Auth:
+- `GET` endpoints: Not required.
+- `POST/PUT/DELETE`: Required + admin role (`admin` or `super_admin`).
 
 ### GET `/products`
 Query params:
@@ -412,7 +414,9 @@ Notes:
 
 ## Admin Orders
 Base path: `/api/v1/admin/orders`
-Auth: Required (token validation only, no role enforcement yet).
+Auth: Required + admin role.
+- `GET`: `viewer`, `operator`, `admin`, `super_admin`
+- `PATCH`: `operator`, `admin`, `super_admin`
 
 ### GET `/api/v1/admin/orders?page=1&limit=10&status=...&q=...`
 Response:
@@ -440,8 +444,34 @@ Response:
 { "order_id": "orderId", "shipment": { "carrier": "JNE", "nomor_resi": "RESI123", "eta": "2-3 hari" }, "message": "Shipment updated" }
 ```
 
+## Admin System
+Base path: `/api/v1/admin`
+Auth: Required + admin role.
+
+### GET `/api/v1/admin/session`
+Response:
+```json
+{ "admin": { "uid": "uid", "role": "admin", "email": "admin@example.com", "display_name": "Admin Name" } }
+```
+
+### GET `/api/v1/admin/dashboard`
+Response:
+```json
+{
+  "summary": { "total_orders": 12, "paid_orders": 8, "pending_orders": 4, "products_count": 10, "total_revenue": 12000000 },
+  "orders_by_status": [ { "status": "awaiting-payment", "count": 4 }, { "status": "in-queue", "count": 3 } ],
+  "recent_orders": [ { "id": "orderId", "status": "awaiting-payment", "total": 1000000, "created_at": "2026-02-03T10:00:00+00:00" } ]
+}
+```
+
+## Admin Products
+Base path: `/api/v1/admin/products`
+Auth:
+- `GET`: `viewer`, `operator`, `admin`, `super_admin`
+- `POST/PUT/DELETE`: `admin`, `super_admin`
+- Request/response payloads follow the same schema as `/products`.
+
 ## Notes and Caveats
 - Timestamps are stored as UTC and typically serialized to ISO 8601 strings in responses.
 - Some endpoints return placeholder data today (shipping options, shipment tracking, invoice URL). Mobile clients should be tolerant of these defaults.
 - Product create/update replaces subcollections when arrays are provided.
-- Admin endpoints currently only validate token presence; there is no admin role check.
