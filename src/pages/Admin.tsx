@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react"
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type CSSProperties,
+  type FormEvent,
+} from "react"
 import { Link } from "react-router-dom"
 import CIcon from "@coreui/icons-react"
 import {
@@ -100,6 +107,19 @@ const ORDER_STATUS_OPTIONS = [
   "expired",
 ]
 const SIDEBAR_WIDTH = 270
+
+const getSidebarNavItemStyle = (active: boolean): CSSProperties => ({
+  borderRadius: 14,
+  padding: "0.75rem 0.9rem",
+  border: active
+    ? "1px solid rgba(56, 189, 248, 0.45)"
+    : "1px solid rgba(148, 163, 184, 0.2)",
+  background: active
+    ? "linear-gradient(135deg, rgba(37, 99, 235, 0.35), rgba(14, 165, 233, 0.22))"
+    : "rgba(255, 255, 255, 0.04)",
+  color: "#e2e8f0",
+  fontWeight: 600,
+})
 
 const defaultProductForm: ProductFormState = {
   id: null,
@@ -603,7 +623,7 @@ export function Admin() {
       {sidebarVisible && (
         <CSidebar
           colorScheme="dark"
-          className="border-end border-dark"
+          className="border-0 d-flex flex-column"
           style={{
             width: SIDEBAR_WIDTH,
             position: "fixed",
@@ -614,55 +634,87 @@ export function Admin() {
             overflowY: "auto",
             zIndex: 1030,
             background: "linear-gradient(180deg, #0b1736, #0f244f 38%, #07142c)",
+            padding: "0.85rem 0.7rem 0.8rem",
+            boxShadow: "8px 0 30px rgba(2, 6, 23, 0.25)",
           }}
         >
-          <CSidebarHeader className="border-0 p-3">
-            <CSidebarBrand className="m-0 d-flex align-items-center fw-semibold text-white">
+          <CSidebarHeader className="border-0 p-2 pb-3">
+            <CSidebarBrand
+              className="m-0 d-flex align-items-center fw-semibold text-white rounded-4"
+              style={{
+                padding: "0.85rem 0.95rem",
+                border: "1px solid rgba(148, 163, 184, 0.24)",
+                background: "rgba(255, 255, 255, 0.04)",
+              }}
+            >
               <CIcon icon={cilShieldAlt} className="me-2" />
               Bafain Admin
             </CSidebarBrand>
           </CSidebarHeader>
-          <div className="px-3">
-            <CNavLink
-              href="#"
-              active={activePanel === "dashboard"}
-              onClick={(event) => {
-                event.preventDefault()
-                setActivePanel("dashboard")
-              }}
+          <div className="px-2">
+            <div
+              className="small text-uppercase fw-semibold mb-2"
+              style={{ color: "rgba(226, 232, 240, 0.65)", paddingLeft: "0.5rem" }}
             >
-              <CIcon icon={cilSpeedometer} className="me-2" />
-              Dashboard
-            </CNavLink>
-            <CNavLink
-              href="#"
-              active={activePanel === "orders"}
-              onClick={(event) => {
-                event.preventDefault()
-                setActivePanel("orders")
-              }}
-            >
-              <CIcon icon={cilListRich} className="me-2" />
-              Orders
-            </CNavLink>
-            <CNavLink
-              href="#"
-              active={activePanel === "products"}
-              onClick={(event) => {
-                event.preventDefault()
-                setActivePanel("products")
-              }}
-            >
-              <CIcon icon={cilBasket} className="me-2" />
-              Products
-            </CNavLink>
+              Navigation
+            </div>
+            <div className="d-grid gap-2">
+              <CNavLink
+                href="#"
+                active={activePanel === "dashboard"}
+                className="d-flex align-items-center"
+                style={getSidebarNavItemStyle(activePanel === "dashboard")}
+                onClick={(event) => {
+                  event.preventDefault()
+                  setActivePanel("dashboard")
+                }}
+              >
+                <CIcon icon={cilSpeedometer} className="me-2" />
+                Dashboard
+              </CNavLink>
+              <CNavLink
+                href="#"
+                active={activePanel === "orders"}
+                className="d-flex align-items-center"
+                style={getSidebarNavItemStyle(activePanel === "orders")}
+                onClick={(event) => {
+                  event.preventDefault()
+                  setActivePanel("orders")
+                }}
+              >
+                <CIcon icon={cilListRich} className="me-2" />
+                Orders
+              </CNavLink>
+              <CNavLink
+                href="#"
+                active={activePanel === "products"}
+                className="d-flex align-items-center"
+                style={getSidebarNavItemStyle(activePanel === "products")}
+                onClick={(event) => {
+                  event.preventDefault()
+                  setActivePanel("products")
+                }}
+              >
+                <CIcon icon={cilBasket} className="me-2" />
+                Products
+              </CNavLink>
+            </div>
           </div>
-          <div className="mt-auto p-3 text-white small">
-            <div className="mb-2 fw-semibold">Signed in</div>
-            <div className="text-truncate">{admin.email || admin.uid}</div>
-            <CBadge color="info" className="mt-2">
-              role: {admin.role}
-            </CBadge>
+          <div className="mt-auto p-2 pt-3 text-white small">
+            <div
+              className="rounded-4"
+              style={{
+                border: "1px solid rgba(148, 163, 184, 0.24)",
+                background: "rgba(255, 255, 255, 0.05)",
+                padding: "0.85rem 0.9rem",
+              }}
+            >
+              <div className="mb-2 fw-semibold">Signed in</div>
+              <div className="text-truncate">{admin.email || admin.uid}</div>
+              <CBadge color="info" className="mt-2">
+                role: {admin.role}
+              </CBadge>
+            </div>
           </div>
         </CSidebar>
       )}
