@@ -1,11 +1,11 @@
-from fastapi import APIRouter, Depends, Header, Query
+from fastapi import APIRouter, Depends, Query
 
 from controllers.admin_orders_controller import (
   list_admin_orders,
   update_admin_order,
   update_admin_shipment,
 )
-from lib.firebase_auth import extract_access_token
+from lib.auth_dependency import require_access_token
 from lib.firestore_client import get_firestore_client
 from models.admin import (
   AdminOrderListResponse,
@@ -24,10 +24,9 @@ def list_orders_route(
   q: str | None = Query(default=None),
   page: int = Query(default=1, ge=1),
   limit: int = Query(default=10, ge=1, le=100),
-  authorization: str | None = Header(default=None),
+  access_token: str = Depends(require_access_token),
   firestore=Depends(get_firestore_client),
 ):
-  access_token = extract_access_token(authorization)
   return list_admin_orders(access_token, firestore, status, q, page, limit)
 
 
@@ -35,10 +34,9 @@ def list_orders_route(
 def update_order_route(
   order_id: str,
   payload: AdminOrderUpdateRequest,
-  authorization: str | None = Header(default=None),
+  access_token: str = Depends(require_access_token),
   firestore=Depends(get_firestore_client),
 ):
-  access_token = extract_access_token(authorization)
   return update_admin_order(access_token, order_id, payload, firestore)
 
 
@@ -46,8 +44,7 @@ def update_order_route(
 def update_shipment_route(
   order_id: str,
   payload: AdminShipmentUpdateRequest,
-  authorization: str | None = Header(default=None),
+  access_token: str = Depends(require_access_token),
   firestore=Depends(get_firestore_client),
 ):
-  access_token = extract_access_token(authorization)
   return update_admin_shipment(access_token, order_id, payload, firestore)

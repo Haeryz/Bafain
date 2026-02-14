@@ -48,8 +48,11 @@ def list_tracking_events(
 
 
 def public_track(
-  order_number: str | None, email_or_phone: str | None
+  access_token: str,
+  order_number: str | None,
+  email_or_phone: str | None,
 ) -> PublicTrackingResponse:
+  get_user_id(access_token)
   if not order_number or not email_or_phone:
     raise HTTPException(
       status_code=status.HTTP_400_BAD_REQUEST,

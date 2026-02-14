@@ -161,7 +161,9 @@ Response:
 
 ## Products
 Base path: `/products`
-Auth: Not required.
+Auth:
+- `GET /products` and `GET /products/{product_id}`: Not required.
+- `POST /products`, `PUT /products/{product_id}`, `DELETE /products/{product_id}`: Required.
 
 ### GET `/products`
 Query params:
@@ -387,7 +389,7 @@ Response:
 ```
 
 ### GET `/api/v1/track?orderNumber=...&emailOrPhone=...`
-Auth: Not required.
+Auth: Required.
 Response:
 ```json
 { "order_number": "ORD-123", "shipment": { "order_id": "ORD-123", "carrier": "JNE", "tracking_number": "RESI123456789", "nomor_resi": "RESI123456789", "shipped_at": "2026-02-03T10:00:00Z", "eta": "2-3 hari" }, "events": [ { "order_id": "ORD-123", "status": "Order dibuat", "description": "Pesanan diterima", "timestamp": "2026-02-03T10:00:00Z" } ] }
@@ -395,7 +397,7 @@ Response:
 
 ## Uploads
 Base path: `/uploads`
-Auth: Not required.
+Auth: Required.
 
 ### POST `/uploads/sign`
 Request:

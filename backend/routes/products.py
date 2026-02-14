@@ -7,6 +7,7 @@ from controllers.product_controller import (
   list_products,
   update_product,
 )
+from lib.auth_dependency import require_access_token
 from lib.firestore_client import get_firestore_client
 from models.product import ProductCreateRequest, ProductResponse, ProductUpdateRequest
 
@@ -45,7 +46,9 @@ def get_product_route(product_id: str, firestore=Depends(get_firestore_client)):
 
 @router.post("", response_model=ProductResponse, status_code=201)
 def create_product_route(
-  payload: ProductCreateRequest, firestore=Depends(get_firestore_client)
+  payload: ProductCreateRequest,
+  _access_token: str = Depends(require_access_token),
+  firestore=Depends(get_firestore_client),
 ):
   return create_product(firestore, payload)
 
@@ -54,11 +57,16 @@ def create_product_route(
 def update_product_route(
   product_id: str,
   payload: ProductUpdateRequest,
+  _access_token: str = Depends(require_access_token),
   firestore=Depends(get_firestore_client),
 ):
   return update_product(firestore, product_id, payload)
 
 
 @router.delete("/{product_id}")
-def delete_product_route(product_id: str, firestore=Depends(get_firestore_client)):
+def delete_product_route(
+  product_id: str,
+  _access_token: str = Depends(require_access_token),
+  firestore=Depends(get_firestore_client),
+):
   return delete_product(firestore, product_id)

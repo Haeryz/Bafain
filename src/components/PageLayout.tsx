@@ -4,6 +4,7 @@ import AppFooter from "./AppFooter"
 import AppHeader from "./AppHeader"
 import CsFloatingButton from "./CsFloatingButton"
 import LoginModal from "./LoginModal"
+import { getSafeNextPath } from "@/lib/navigation"
 import { useAuthStore } from "@/stores/auth/useAuthStore"
 
 type PageLayoutProps = {
@@ -19,6 +20,7 @@ export function PageLayout({ children }: PageLayoutProps) {
   const logout = useAuthStore((state) => state.logout)
   const navigate = useNavigate()
   const location = useLocation()
+  const nextPath = getSafeNextPath(location.search)
   const wasLoggedIn = useRef(isLoggedIn)
 
   useEffect(() => {
@@ -163,7 +165,7 @@ export function PageLayout({ children }: PageLayoutProps) {
         onClose={() => setLoginOpen(false)}
         onSwitchMode={(mode) => setLoginMode(mode)}
         onLoginSuccess={() => {
-          navigate("/beranda")
+          navigate(nextPath || "/beranda", { replace: true })
         }}
       />
     </div>

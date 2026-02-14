@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Header, Query
+from fastapi import APIRouter, Depends, Query
 
 from controllers.orders_controller import (
   add_order_note,
@@ -10,7 +10,7 @@ from controllers.orders_controller import (
   list_order_notes,
   list_orders,
 )
-from lib.firebase_auth import extract_access_token
+from lib.auth_dependency import require_access_token
 from lib.firestore_client import get_firestore_client
 from models.orders import (
   OrderActionResponse,
@@ -27,10 +27,9 @@ router = APIRouter(prefix="/orders")
 @router.post("", response_model=OrderResponse, status_code=201)
 def create_order_route(
   payload: OrderCreateRequest,
-  authorization: str | None = Header(default=None),
+  access_token: str = Depends(require_access_token),
   firestore=Depends(get_firestore_client),
 ):
-  access_token = extract_access_token(authorization)
   return create_order(access_token, payload, firestore)
 
 
@@ -40,50 +39,45 @@ def list_orders_route(
   q: str | None = Query(default=None),
   page: int = Query(default=1, ge=1),
   limit: int = Query(default=10, ge=1, le=100),
-  authorization: str | None = Header(default=None),
+  access_token: str = Depends(require_access_token),
   firestore=Depends(get_firestore_client),
 ):
-  access_token = extract_access_token(authorization)
   return list_orders(access_token, firestore, status, q, page, limit)
 
 
 @router.get("/{order_id}", response_model=OrderResponse)
 def get_order_detail_route(
   order_id: str,
-  authorization: str | None = Header(default=None),
+  access_token: str = Depends(require_access_token),
   firestore=Depends(get_firestore_client),
 ):
-  access_token = extract_access_token(authorization)
   return get_order_detail(access_token, order_id, firestore)
 
 
 @router.post("/{order_id}/cancel", response_model=OrderActionResponse)
 def cancel_order_route(
   order_id: str,
-  authorization: str | None = Header(default=None),
+  access_token: str = Depends(require_access_token),
   firestore=Depends(get_firestore_client),
 ):
-  access_token = extract_access_token(authorization)
   return cancel_order(access_token, order_id, firestore)
 
 
 @router.post("/{order_id}/confirm-received", response_model=OrderActionResponse)
 def confirm_received_route(
   order_id: str,
-  authorization: str | None = Header(default=None),
+  access_token: str = Depends(require_access_token),
   firestore=Depends(get_firestore_client),
 ):
-  access_token = extract_access_token(authorization)
   return confirm_received(access_token, order_id, firestore)
 
 
 @router.post("/{order_id}/check-payment", response_model=OrderActionResponse)
 def check_payment_route(
   order_id: str,
-  authorization: str | None = Header(default=None),
+  access_token: str = Depends(require_access_token),
   firestore=Depends(get_firestore_client),
 ):
-  access_token = extract_access_token(authorization)
   return check_payment(access_token, order_id, firestore)
 
 
@@ -91,18 +85,16 @@ def check_payment_route(
 def add_order_note_route(
   order_id: str,
   payload: OrderNoteRequest,
-  authorization: str | None = Header(default=None),
+  access_token: str = Depends(require_access_token),
   firestore=Depends(get_firestore_client),
 ):
-  access_token = extract_access_token(authorization)
   return add_order_note(access_token, order_id, payload, firestore)
 
 
 @router.get("/{order_id}/notes", response_model=OrderNotesResponse)
 def list_order_notes_route(
   order_id: str,
-  authorization: str | None = Header(default=None),
+  access_token: str = Depends(require_access_token),
   firestore=Depends(get_firestore_client),
 ):
-  access_token = extract_access_token(authorization)
   return list_order_notes(access_token, order_id, firestore)

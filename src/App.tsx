@@ -10,6 +10,8 @@ import Start from "@/pages/Start"
 import TentangKami from "@/pages/TentangKami"
 import Teknologi from "@/pages/Teknologi"
 import Invoice from "@/pages/Invoice"
+import RequireAuth from "@/components/RequireAuth"
+import RequireGuest from "@/components/RequireGuest"
 
 function ScrollToTop() {
   const location = useLocation()
@@ -27,16 +29,58 @@ export function App() {
       <ScrollToTop />
       <Routes>
         <Route path="/" element={<Navigate to="/beranda" replace />} />
-        <Route path="/start" element={<Start />} />
+        <Route
+          path="/start"
+          element={
+            <RequireGuest>
+              <Start />
+            </RequireGuest>
+          }
+        />
         <Route path="/beranda" element={<Beranda />} />
         <Route path="/teknologi" element={<Teknologi />} />
         <Route path="/produk" element={<Produk />} />
         <Route path="/produk/:productId" element={<Produk />} />
-        <Route path="/pemesanan" element={<Pemesanan />} />
-        <Route path="/pembayaran" element={<Pembayaran />} />
-        <Route path="/invoice" element={<Invoice />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/lacak-pesanan" element={<LacakPesanan />} />
+        <Route
+          path="/pemesanan"
+          element={
+            <RequireAuth>
+              <Pemesanan />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/pembayaran"
+          element={
+            <RequireAuth>
+              <Pembayaran />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/invoice"
+          element={
+            <RequireAuth>
+              <Invoice />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <RequireAuth>
+              <Profile />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/lacak-pesanan"
+          element={
+            <RequireAuth>
+              <LacakPesanan />
+            </RequireAuth>
+          }
+        />
         <Route path="/tentang-kami" element={<TentangKami />} />
       </Routes>
     </BrowserRouter>

@@ -1,9 +1,10 @@
 import os
 
 from dotenv import load_dotenv
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-import redis
+from fastapi.responses import JSONResponse
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from routes.auth import router as auth_router
 from routes.addresses import router as addresses_router
@@ -21,7 +22,15 @@ from routes.uploads import router as uploads_router
 
 load_dotenv()
 
-app = FastAPI(title="Bafain API")
+app_env = (os.getenv("APP_ENV") or "").strip().lower()
+is_production = app_env in {"production", "prod"}
+
+app = FastAPI(
+  title="Bafain API",
+  docs_url=None if is_production else "/docs",
+  redoc_url=None if is_production else "/redoc",
+  openapi_url=None if is_production else "/openapi.json",
+)
 
 raw_origins = os.getenv("CORS_ALLOW_ORIGINS")
 if raw_origins:
@@ -45,9 +54,39 @@ app.add_middleware(
 )
 
 
-def get_redis_client() -> redis.Redis:
-  redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
-  return redis.from_url(redis_url, decode_responses=True)
+def _resolve_detail(exc: StarletteHTTPException) -> str:
+  if isinstance(exc.detail, str) and exc.detail.strip():
+    return exc.detail.strip()
+  if exc.status_code == 404:
+    return "Not Found"
+  if exc.status_code == 405:
+    return "Method Not Allowed"
+  return "Request failed"
+
+
+@app.exception_handler(StarletteHTTPException)
+async def handle_http_exception(
+  _request: Request,
+  exc: StarletteHTTPException,
+):
+  if exc.status_code == 404:
+    return JSONResponse(
+      status_code=404,
+      content={"detail": "Not Found"},
+      headers=exc.headers,
+    )
+  if exc.status_code == 405:
+    return JSONResponse(
+      status_code=405,
+      content={"detail": "Method Not Allowed"},
+      headers=exc.headers,
+    )
+
+  return JSONResponse(
+    status_code=exc.status_code,
+    content={"detail": _resolve_detail(exc)},
+    headers=exc.headers,
+  )
 
 
 @app.get("/health")

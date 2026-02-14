@@ -1,5 +1,5 @@
 import { type FormEvent } from "react"
-import { Link } from "react-router-dom"
+import { Link, useLocation, useNavigate } from "react-router-dom"
 import {
   ArrowRight,
   Leaf,
@@ -8,6 +8,7 @@ import {
   Sparkles,
 } from "lucide-react"
 import PageLayout from "@/components/PageLayout"
+import { getSafeNextPath } from "@/lib/navigation"
 import { useAuthStore } from "@/stores/auth/useAuthStore"
 
 const benefitCards = [
@@ -45,6 +46,9 @@ const authTabs = [
 ] as const
 
 export function Start() {
+  const navigate = useNavigate()
+  const location = useLocation()
+  const nextPath = getSafeNextPath(location.search)
   const {
     activeTab,
     setActiveTab,
@@ -78,7 +82,9 @@ export function Start() {
 
   const handleLoginSubmit = async (event: FormEvent) => {
     event.preventDefault()
-    await login()
+    const success = await login()
+    if (!success) return
+    navigate(nextPath || "/beranda", { replace: true })
   }
 
   const handleRegisterSubmit = async (event: FormEvent) => {

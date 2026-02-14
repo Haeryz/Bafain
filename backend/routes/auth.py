@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
 from controllers.auth_controller import (
   forgot_password,
@@ -7,6 +7,7 @@ from controllers.auth_controller import (
   register_user,
   reset_password,
 )
+from lib.rate_limit import enforce_auth_rate_limit
 from models.auth import (
   AuthForgotPasswordRequest,
   AuthLoginRequest,
@@ -18,7 +19,7 @@ from models.auth import (
   MessageResponse,
 )
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(enforce_auth_rate_limit)])
 
 
 @router.post("/register", response_model=AuthRegisterResponse)
