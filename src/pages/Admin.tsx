@@ -46,6 +46,8 @@ import {
 } from "@coreui/react"
 import {
   cilBasket,
+  cilChevronLeft,
+  cilChevronRight,
   cilCog,
   cilListRich,
   cilReload,
@@ -107,10 +109,14 @@ const ORDER_STATUS_OPTIONS = [
   "expired",
 ]
 const SIDEBAR_WIDTH = 270
+const SIDEBAR_COLLAPSED_WIDTH = 92
 
-const getSidebarNavItemStyle = (active: boolean): CSSProperties => ({
+const getSidebarNavItemStyle = (
+  active: boolean,
+  collapsed: boolean
+): CSSProperties => ({
   borderRadius: 14,
-  padding: "0.75rem 0.9rem",
+  padding: collapsed ? "0.75rem 0.7rem" : "0.75rem 0.9rem",
   border: active
     ? "1px solid rgba(56, 189, 248, 0.45)"
     : "1px solid rgba(148, 163, 184, 0.2)",
@@ -119,6 +125,7 @@ const getSidebarNavItemStyle = (active: boolean): CSSProperties => ({
     : "rgba(255, 255, 255, 0.04)",
   color: "#e2e8f0",
   fontWeight: 600,
+  justifyContent: collapsed ? "center" : "flex-start",
 })
 
 const defaultProductForm: ProductFormState = {
@@ -205,7 +212,7 @@ export function Admin() {
   const logout = useAuthStore((state) => state.logout)
 
   const [activePanel, setActivePanel] = useState<AdminPanel>("dashboard")
-  const [sidebarVisible, setSidebarVisible] = useState(true)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [feedback, setFeedback] = useState<Feedback | null>(null)
   const [refreshing, setRefreshing] = useState(false)
 
@@ -552,6 +559,9 @@ export function Admin() {
     (acc, value) => acc + value,
     0
   )
+  const sidebarWidth = sidebarCollapsed
+    ? SIDEBAR_COLLAPSED_WIDTH
+    : SIDEBAR_WIDTH
 
   useEffect(() => {
     if (!availableSalesYears.length) {
@@ -660,109 +670,146 @@ export function Admin() {
 
   return (
     <div className="min-vh-100" style={{ backgroundColor: "#f4f6fb" }}>
-      {sidebarVisible && (
-        <CSidebar
-          colorScheme="dark"
-          className="border-0 d-flex flex-column"
-          style={{
-            width: SIDEBAR_WIDTH,
-            position: "fixed",
-            top: 0,
-            left: 0,
-            bottom: 0,
-            height: "100vh",
-            overflowY: "auto",
-            zIndex: 1030,
-            background: "linear-gradient(180deg, #0b1736, #0f244f 38%, #07142c)",
-            padding: "0.85rem 0.7rem 0.8rem",
-            boxShadow: "8px 0 30px rgba(2, 6, 23, 0.25)",
-          }}
-        >
-          <CSidebarHeader className="border-0 p-2 pb-3">
-            <CSidebarBrand
-              className="m-0 d-flex align-items-center fw-semibold text-white rounded-4"
+      <CSidebar
+        colorScheme="dark"
+        className="border-0 d-flex flex-column"
+        style={{
+          width: sidebarWidth,
+          position: "fixed",
+          top: 0,
+          left: 0,
+          bottom: 0,
+          height: "100vh",
+          overflowY: "auto",
+          zIndex: 1030,
+          background: "linear-gradient(180deg, #0b1736, #0f244f 38%, #07142c)",
+          padding: "0.85rem 0.7rem 0.8rem",
+          boxShadow: "8px 0 30px rgba(2, 6, 23, 0.25)",
+          transition: "width 0.22s ease",
+        }}
+      >
+        <CSidebarHeader className="border-0 p-2 pb-3">
+          <div className="mb-2 d-flex justify-content-end">
+            <CButton
+              color="light"
+              variant="outline"
+              size="sm"
+              className="d-inline-flex align-items-center justify-content-center text-white"
               style={{
-                padding: "0.85rem 0.95rem",
-                border: "1px solid rgba(148, 163, 184, 0.24)",
-                background: "rgba(255, 255, 255, 0.04)",
+                width: 34,
+                height: 34,
+                borderColor: "rgba(148, 163, 184, 0.35)",
+                background: "rgba(255, 255, 255, 0.06)",
               }}
+              aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+              onClick={() => setSidebarCollapsed((prev) => !prev)}
             >
-              <CIcon icon={cilShieldAlt} className="me-2" />
-              Bafain Admin
-            </CSidebarBrand>
-          </CSidebarHeader>
-          <div className="px-2">
+              <CIcon icon={sidebarCollapsed ? cilChevronRight : cilChevronLeft} />
+            </CButton>
+          </div>
+          <CSidebarBrand
+            className="m-0 d-flex align-items-center fw-semibold text-white rounded-4"
+            style={{
+              padding: sidebarCollapsed ? "0.85rem 0.65rem" : "0.85rem 0.95rem",
+              border: "1px solid rgba(148, 163, 184, 0.24)",
+              background: "rgba(255, 255, 255, 0.04)",
+              justifyContent: sidebarCollapsed ? "center" : "flex-start",
+            }}
+          >
+            <CIcon
+              icon={cilShieldAlt}
+              className={sidebarCollapsed ? "" : "me-2"}
+              size="lg"
+            />
+            {!sidebarCollapsed && "Bafain Admin"}
+          </CSidebarBrand>
+        </CSidebarHeader>
+        <div className="px-2">
+          {!sidebarCollapsed && (
             <div
               className="small text-uppercase fw-semibold mb-2"
               style={{ color: "rgba(226, 232, 240, 0.65)", paddingLeft: "0.5rem" }}
             >
               Navigation
             </div>
-            <div className="d-grid gap-2">
-              <CNavLink
-                href="#"
-                active={activePanel === "dashboard"}
-                className="d-flex align-items-center"
-                style={getSidebarNavItemStyle(activePanel === "dashboard")}
-                onClick={(event) => {
-                  event.preventDefault()
-                  setActivePanel("dashboard")
-                }}
-              >
-                <CIcon icon={cilSpeedometer} className="me-2" />
-                Dashboard
-              </CNavLink>
-              <CNavLink
-                href="#"
-                active={activePanel === "orders"}
-                className="d-flex align-items-center"
-                style={getSidebarNavItemStyle(activePanel === "orders")}
-                onClick={(event) => {
-                  event.preventDefault()
-                  setActivePanel("orders")
-                }}
-              >
-                <CIcon icon={cilListRich} className="me-2" />
-                Orders
-              </CNavLink>
-              <CNavLink
-                href="#"
-                active={activePanel === "products"}
-                className="d-flex align-items-center"
-                style={getSidebarNavItemStyle(activePanel === "products")}
-                onClick={(event) => {
-                  event.preventDefault()
-                  setActivePanel("products")
-                }}
-              >
-                <CIcon icon={cilBasket} className="me-2" />
-                Products
-              </CNavLink>
-            </div>
-          </div>
-          <div className="mt-auto p-2 pt-3 text-white small">
-            <div
-              className="rounded-4"
-              style={{
-                border: "1px solid rgba(148, 163, 184, 0.24)",
-                background: "rgba(255, 255, 255, 0.05)",
-                padding: "0.85rem 0.9rem",
+          )}
+          <div className="d-grid gap-2">
+            <CNavLink
+              href="#"
+              active={activePanel === "dashboard"}
+              className="d-flex align-items-center"
+              style={getSidebarNavItemStyle(activePanel === "dashboard", sidebarCollapsed)}
+              title="Dashboard"
+              onClick={(event) => {
+                event.preventDefault()
+                setActivePanel("dashboard")
               }}
             >
-              <div className="mb-2 fw-semibold">Signed in</div>
-              <div className="text-truncate">{admin.email || admin.uid}</div>
-              <CBadge color="info" className="mt-2">
-                role: {admin.role}
-              </CBadge>
-            </div>
+              <CIcon
+                icon={cilSpeedometer}
+                className={sidebarCollapsed ? "" : "me-2"}
+              />
+              {!sidebarCollapsed && "Dashboard"}
+            </CNavLink>
+            <CNavLink
+              href="#"
+              active={activePanel === "orders"}
+              className="d-flex align-items-center"
+              style={getSidebarNavItemStyle(activePanel === "orders", sidebarCollapsed)}
+              title="Orders"
+              onClick={(event) => {
+                event.preventDefault()
+                setActivePanel("orders")
+              }}
+            >
+              <CIcon icon={cilListRich} className={sidebarCollapsed ? "" : "me-2"} />
+              {!sidebarCollapsed && "Orders"}
+            </CNavLink>
+            <CNavLink
+              href="#"
+              active={activePanel === "products"}
+              className="d-flex align-items-center"
+              style={getSidebarNavItemStyle(activePanel === "products", sidebarCollapsed)}
+              title="Products"
+              onClick={(event) => {
+                event.preventDefault()
+                setActivePanel("products")
+              }}
+            >
+              <CIcon icon={cilBasket} className={sidebarCollapsed ? "" : "me-2"} />
+              {!sidebarCollapsed && "Products"}
+            </CNavLink>
           </div>
-        </CSidebar>
-      )}
+        </div>
+        <div className="mt-auto p-2 pt-3 text-white small">
+          <div
+            className="rounded-4"
+            style={{
+              border: "1px solid rgba(148, 163, 184, 0.24)",
+              background: "rgba(255, 255, 255, 0.05)",
+              padding: "0.85rem 0.9rem",
+              textAlign: sidebarCollapsed ? "center" : "left",
+            }}
+          >
+            {sidebarCollapsed ? (
+              <CBadge color="info">{admin.role.slice(0, 1).toUpperCase()}</CBadge>
+            ) : (
+              <>
+                <div className="mb-2 fw-semibold">Signed in</div>
+                <div className="text-truncate">{admin.email || admin.uid}</div>
+                <CBadge color="info" className="mt-2">
+                  role: {admin.role}
+                </CBadge>
+              </>
+            )}
+          </div>
+        </div>
+      </CSidebar>
 
       <div
         className="d-flex min-vh-100 flex-column"
         style={{
-          marginLeft: sidebarVisible ? SIDEBAR_WIDTH : 0,
+          marginLeft: sidebarWidth,
           transition: "margin-left 0.2s ease",
         }}
       >
@@ -777,16 +824,6 @@ export function Admin() {
           <CHeaderNav className="ms-auto d-flex align-items-center">
             <CNavItem>
               <CButton
-                color="light"
-                variant="outline"
-                className="me-2"
-                onClick={() => setSidebarVisible((prev) => !prev)}
-              >
-                {sidebarVisible ? "Hide Sidebar" : "Show Sidebar"}
-              </CButton>
-            </CNavItem>
-            <CNavItem>
-              <CButton
                 color="primary"
                 variant="outline"
                 className="me-2"
@@ -798,11 +835,6 @@ export function Admin() {
                 <CIcon icon={cilReload} className="me-2" />
                 Refresh
               </CButton>
-            </CNavItem>
-            <CNavItem>
-              <Link to="/beranda" className="btn btn-outline-secondary me-2">
-                Beranda
-              </Link>
             </CNavItem>
             <CNavItem>
               <CButton color="danger" onClick={logout}>
