@@ -99,6 +99,7 @@ const ORDER_STATUS_OPTIONS = [
   "cancelled",
   "expired",
 ]
+const SIDEBAR_WIDTH = 270
 
 const defaultProductForm: ProductFormState = {
   id: null,
@@ -598,13 +599,20 @@ export function Admin() {
   }
 
   return (
-    <div className="d-flex min-vh-100" style={{ backgroundColor: "#f4f6fb" }}>
+    <div className="min-vh-100" style={{ backgroundColor: "#f4f6fb" }}>
       {sidebarVisible && (
         <CSidebar
           colorScheme="dark"
           className="border-end border-dark"
           style={{
-            width: 270,
+            width: SIDEBAR_WIDTH,
+            position: "fixed",
+            top: 0,
+            left: 0,
+            bottom: 0,
+            height: "100vh",
+            overflowY: "auto",
+            zIndex: 1030,
             background: "linear-gradient(180deg, #0b1736, #0f244f 38%, #07142c)",
           }}
         >
@@ -659,8 +667,17 @@ export function Admin() {
         </CSidebar>
       )}
 
-      <div className="d-flex flex-column flex-grow-1 min-vh-100">
-        <CHeader className="bg-white border-bottom px-3 py-2 shadow-sm">
+      <div
+        className="d-flex min-vh-100 flex-column"
+        style={{
+          marginLeft: sidebarVisible ? SIDEBAR_WIDTH : 0,
+          transition: "margin-left 0.2s ease",
+        }}
+      >
+        <CHeader
+          className="bg-white border-bottom px-3 py-2 shadow-sm"
+          style={{ position: "sticky", top: 0, zIndex: 1020 }}
+        >
           <CHeaderBrand className="fw-semibold">
             <CIcon icon={cilCog} className="me-2 text-primary" />
             Admin Control Center
