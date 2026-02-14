@@ -53,7 +53,7 @@ import {
   cilSpeedometer,
   cilTruck,
 } from "@coreui/icons"
-import { CChartBar } from "@coreui/react-chartjs"
+import { CChartBar, CChartLine } from "@coreui/react-chartjs"
 import "chart.js/auto"
 import coreuiCssHref from "@coreui/coreui/dist/css/coreui.min.css?url"
 import simplebarCssHref from "simplebar-react/dist/simplebar.min.css?url"
@@ -219,6 +219,7 @@ export function Admin() {
   const [dashboard, setDashboard] = useState<AdminDashboardResponse | null>(null)
   const [dashboardLoading, setDashboardLoading] = useState(false)
   const [dashboardError, setDashboardError] = useState<string | null>(null)
+  const [selectedSalesYear, setSelectedSalesYear] = useState<number | null>(null)
 
   const [orders, setOrders] = useState<AdminOrder[]>([])
   const [ordersLoading, setOrdersLoading] = useState(false)
@@ -523,6 +524,45 @@ export function Admin() {
 
   const statusChartLabels = dashboard?.orders_by_status.map((x) => x.status) || []
   const statusChartData = dashboard?.orders_by_status.map((x) => x.count) || []
+  const monthlySalesData = dashboard?.monthly_sales || []
+  const availableSalesYears = monthlySalesData.map((entry) => entry.year)
+  const effectiveSalesYear =
+    selectedSalesYear && availableSalesYears.includes(selectedSalesYear)
+      ? selectedSalesYear
+      : availableSalesYears[0] || null
+  const selectedYearSales = monthlySalesData.find(
+    (entry) => entry.year === effectiveSalesYear
+  )
+  const monthlySalesLabels = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "Mei",
+    "Jun",
+    "Jul",
+    "Agu",
+    "Sep",
+    "Okt",
+    "Nov",
+    "Des",
+  ]
+  const monthlySalesTotals = selectedYearSales?.monthly_totals || Array(12).fill(0)
+  const selectedYearSalesTotal = monthlySalesTotals.reduce(
+    (acc, value) => acc + value,
+    0
+  )
+
+  useEffect(() => {
+    if (!availableSalesYears.length) {
+      setSelectedSalesYear(null)
+      return
+    }
+    if (selectedSalesYear && availableSalesYears.includes(selectedSalesYear)) {
+      return
+    }
+    setSelectedSalesYear(availableSalesYears[0])
+  }, [availableSalesYears, selectedSalesYear])
 
   if (authChecking) {
     return (
@@ -877,6 +917,73 @@ export function Admin() {
                           <span>{dashboard?.summary.total_orders ?? 0}</span>
                         </div>
                       </div>
+                    </CCardBody>
+                  </CCard>
+                </CCol>
+              </CRow>
+              <CRow className="g-3 mt-1">
+                <CCol lg={12}>
+                  <CCard className="border-0 shadow-sm">
+                    <CCardHeader className="bg-white d-flex flex-wrap justify-content-between align-items-center gap-2">
+                      <div>
+                        <span className="fw-semibold">Penjualan Per Bulan</span>
+                        <div className="small text-body-secondary">
+                          Total {effectiveSalesYear || "-"}: {formatIdr(selectedYearSalesTotal)}
+                        </div>
+                      </div>
+                      <div style={{ minWidth: 160 }}>
+                        <CFormSelect
+                          value={effectiveSalesYear ?? ""}
+                          onChange={(event) => {
+                            const nextYear = Number(event.target.value)
+                            setSelectedSalesYear(
+                              Number.isFinite(nextYear) ? nextYear : null
+                            )
+                          }}
+                          disabled={!availableSalesYears.length}
+                        >
+                          {availableSalesYears.length === 0 && (
+                            <option value="">Tidak ada tahun</option>
+                          )}
+                          {availableSalesYears.map((year) => (
+                            <option key={year} value={year}>
+                              {year}
+                            </option>
+                          ))}
+                        </CFormSelect>
+                      </div>
+                    </CCardHeader>
+                    <CCardBody>
+                      {availableSalesYears.length > 0 ? (
+                        <CChartLine
+                          data={{
+                            labels: monthlySalesLabels,
+                            datasets: [
+                              {
+                                label: `Penjualan ${effectiveSalesYear}`,
+                                data: monthlySalesTotals,
+                                borderColor: "#2563eb",
+                                pointBackgroundColor: "#2563eb",
+                                pointBorderColor: "#ffffff",
+                                tension: 0.35,
+                                fill: false,
+                              },
+                            ],
+                          }}
+                          options={{
+                            plugins: { legend: { display: true } },
+                            scales: {
+                              y: {
+                                beginAtZero: true,
+                              },
+                            },
+                          }}
+                        />
+                      ) : (
+                        <p className="text-body-secondary mb-0">
+                          Belum ada data order untuk ditampilkan.
+                        </p>
+                      )}
                     </CCardBody>
                   </CCard>
                 </CCol>
