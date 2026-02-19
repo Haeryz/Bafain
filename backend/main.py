@@ -8,7 +8,9 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from routes.auth import router as auth_router
 from routes.addresses import router as addresses_router
+from routes.admin_products import router as admin_products_router
 from routes.admin_orders import router as admin_orders_router
+from routes.admin_system import router as admin_system_router
 from routes.cart import router as cart_router
 from routes.cs import router as cs_router
 from routes.checkout import router as checkout_router
@@ -97,6 +99,8 @@ def health():
 app.include_router(auth_router, prefix="/auth", tags=["auth"])
 app.include_router(addresses_router, tags=["addresses"])
 app.include_router(admin_orders_router, tags=["admin"])
+app.include_router(admin_products_router, tags=["admin"])
+app.include_router(admin_system_router, tags=["admin"])
 app.include_router(cart_router, tags=["cart"])
 app.include_router(cs_router, tags=["cs"])
 app.include_router(checkout_router, tags=["checkout"])

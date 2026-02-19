@@ -1,4 +1,4 @@
-import { useEffect } from "react"
+import { Suspense, lazy, useEffect } from "react"
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom"
 import Beranda from "@/pages/Beranda"
 import Pemesanan from "@/pages/Pemesanan"
@@ -12,6 +12,7 @@ import Teknologi from "@/pages/Teknologi"
 import Invoice from "@/pages/Invoice"
 import RequireAuth from "@/components/RequireAuth"
 import RequireGuest from "@/components/RequireGuest"
+const Admin = lazy(() => import("@/pages/Admin"))
 
 function ScrollToTop() {
   const location = useLocation()
@@ -82,6 +83,20 @@ export function App() {
           }
         />
         <Route path="/tentang-kami" element={<TentangKami />} />
+        <Route
+          path="/admin"
+          element={
+            <Suspense
+              fallback={
+                <div className="flex min-h-screen items-center justify-center bg-slate-100 text-slate-600">
+                  Memuat admin panel...
+                </div>
+              }
+            >
+              <Admin />
+            </Suspense>
+          }
+        />
       </Routes>
     </BrowserRouter>
   )
