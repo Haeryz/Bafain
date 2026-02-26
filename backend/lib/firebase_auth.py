@@ -1,4 +1,5 @@
 import logging
+import os
 from typing import Any
 
 from fastapi import HTTPException, status
@@ -7,6 +8,25 @@ from firebase_admin import auth as firebase_auth
 from lib.firebase_admin import init_firebase
 
 logger = logging.getLogger("bafain.firebase_auth")
+
+
+def _token_clock_skew_seconds() -> int:
+  raw = (os.getenv("FIREBASE_TOKEN_CLOCK_SKEW_SECONDS") or "").strip()
+  if not raw:
+    return 60
+  try:
+    value = int(raw)
+  except ValueError:
+    logger.warning(
+      "Invalid FIREBASE_TOKEN_CLOCK_SKEW_SECONDS value: %s. Using default 60.",
+      raw,
+    )
+    return 60
+  if value < 0:
+    return 0
+  if value > 60:
+    return 60
+  return value
 
 
 def extract_access_token(authorization: str | None) -> str:
@@ -27,7 +47,10 @@ def extract_access_token(authorization: str | None) -> str:
 def verify_access_token(access_token: str) -> dict[str, Any]:
   init_firebase()
   try:
-    return firebase_auth.verify_id_token(access_token)
+    return firebase_auth.verify_id_token(
+      access_token,
+      clock_skew_seconds=_token_clock_skew_seconds(),
+    )
   except Exception as exc:
     logger.warning("Firebase token verification failed: %s", str(exc))
     raise HTTPException(

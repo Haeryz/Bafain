@@ -63,7 +63,7 @@ export type MessageResponse = {
 }
 
 export function loginUser(payload: { email: string; password: string }) {
-  return request<AuthSession>("/auth/login", payload)
+  return request<AuthSession>("/auth/login", payload, { auth: false })
 }
 
 export type AuthRegisterPayload = {
@@ -74,11 +74,15 @@ export type AuthRegisterPayload = {
 }
 
 export function registerUser(payload: AuthRegisterPayload) {
-  return request<AuthRegisterResponse>("/auth/register", payload)
+  return request<AuthRegisterResponse>("/auth/register", payload, {
+    auth: false,
+  })
 }
 
 export function forgotPassword(payload: { email: string }) {
-  return request<MessageResponse>("/auth/forgot-password", payload)
+  return request<MessageResponse>("/auth/forgot-password", payload, {
+    auth: false,
+  })
 }
 
 export function resetPassword(payload: {
