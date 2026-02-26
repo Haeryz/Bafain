@@ -218,6 +218,12 @@ const badgeColorByPayment = (status: string | null | undefined) => {
   return "secondary"
 }
 
+const TABLE_CELL_WRAP_STYLE: CSSProperties = {
+  whiteSpace: "normal",
+  overflowWrap: "anywhere",
+  wordBreak: "break-word",
+}
+
 function useScopedStylesheets(hrefs: string[]) {
   useEffect(() => {
     const links = hrefs.map((href) => {
@@ -410,19 +416,42 @@ export function Admin() {
 
   useEffect(() => {
     if (!feedback) return
-    if (feedback.color !== "success") return
-    if (!feedback.message.toLowerCase().includes("produk berhasil dihapus")) return
 
     const timeoutId = window.setTimeout(() => {
       setFeedback((current) => {
         if (!current) return current
         if (current.message !== feedback.message) return current
+        if (current.color !== feedback.color) return current
         return null
       })
-    }, 3500)
+    }, 3000)
 
     return () => window.clearTimeout(timeoutId)
   }, [feedback])
+
+  useEffect(() => {
+    if (!authError) return
+    const timeoutId = window.setTimeout(() => {
+      setAuthError((current) => (current === authError ? null : current))
+    }, 3000)
+    return () => window.clearTimeout(timeoutId)
+  }, [authError])
+
+  useEffect(() => {
+    if (!ordersError) return
+    const timeoutId = window.setTimeout(() => {
+      setOrdersError((current) => (current === ordersError ? null : current))
+    }, 3000)
+    return () => window.clearTimeout(timeoutId)
+  }, [ordersError])
+
+  useEffect(() => {
+    if (!productsError) return
+    const timeoutId = window.setTimeout(() => {
+      setProductsError((current) => (current === productsError ? null : current))
+    }, 3000)
+    return () => window.clearTimeout(timeoutId)
+  }, [productsError])
 
   const handleAdminLogin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -1471,7 +1500,9 @@ export function Admin() {
                               style={{ borderColor: "#111827" }}
                             />
                           </CTableDataCell>
-                          <CTableDataCell style={{ paddingLeft: "0.25rem" }}>
+                          <CTableDataCell
+                            style={{ ...TABLE_CELL_WRAP_STYLE, paddingLeft: "0.25rem" }}
+                          >
                             <div className="d-flex align-items-center gap-3">
                               <div
                                 className="overflow-hidden rounded"
@@ -1489,7 +1520,10 @@ export function Admin() {
                                 />
                               </div>
                               <div style={{ minWidth: 0 }}>
-                                <div className="fw-semibold text-truncate">
+                                <div
+                                  className="fw-semibold"
+                                  style={TABLE_CELL_WRAP_STYLE}
+                                >
                                   {product.title}
                                 </div>
                               </div>
@@ -1497,36 +1531,29 @@ export function Admin() {
                           </CTableDataCell>
                           <CTableDataCell
                             className="text-body-secondary"
-                            style={{ paddingLeft: "0.75rem" }}
+                            style={{ ...TABLE_CELL_WRAP_STYLE, paddingLeft: "0.75rem" }}
                           >
-                            <div
-                              style={{
-                                display: "-webkit-box",
-                                WebkitLineClamp: 2,
-                                WebkitBoxOrient: "vertical",
-                                overflow: "hidden",
-                                wordBreak: "break-word",
-                              }}
-                            >
-                              {product.description?.trim() || "-"}
-                            </div>
+                            {product.description?.trim() || "-"}
                           </CTableDataCell>
                           <CTableDataCell
-                            className="text-start text-nowrap"
-                            style={{ paddingLeft: "0.75rem" }}
+                            className="text-start"
+                            style={{ ...TABLE_CELL_WRAP_STYLE, paddingLeft: "0.75rem" }}
                           >
                             {typeof product.stock === "number"
                               ? product.stock.toLocaleString("id-ID")
                               : "20"}
                           </CTableDataCell>
                           <CTableDataCell
-                            className="text-start fw-semibold text-nowrap"
-                            style={{ paddingLeft: "0.75rem" }}
+                            className="text-start fw-semibold"
+                            style={{ ...TABLE_CELL_WRAP_STYLE, paddingLeft: "0.75rem" }}
                           >
                             {formatIdr(product.price_idr)}
                             {product.price_unit ? ` / ${product.price_unit}` : ""}
                           </CTableDataCell>
-                          <CTableDataCell className="text-start" style={{ paddingLeft: "0.75rem" }}>
+                          <CTableDataCell
+                            className="text-start"
+                            style={{ ...TABLE_CELL_WRAP_STYLE, paddingLeft: "0.75rem" }}
+                          >
                             {canManageProducts ? (
                               <div className="d-flex justify-content-start flex-wrap gap-2">
                                 <CButton
