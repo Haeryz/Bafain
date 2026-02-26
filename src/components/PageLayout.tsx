@@ -128,17 +128,11 @@ export function PageLayout({ children }: PageLayoutProps) {
               "pointer-events-none"
             )
             target.classList.add("opacity-100", "translate-y-0")
-          } else {
-            target.classList.add(
-              "opacity-0",
-              "translate-y-6",
-              "pointer-events-none"
-            )
-            target.classList.remove("opacity-100", "translate-y-0")
+            observer.unobserve(target)
           }
         })
       },
-      { threshold: 0.2 }
+      { threshold: 0 }
     )
 
     sections.forEach((section) => observer.observe(section))

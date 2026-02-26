@@ -254,9 +254,6 @@ export function Invoice() {
           <div className="border-b border-slate-200 px-8 py-6">
             <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
               <div>
-                <p className="text-xs font-semibold text-slate-400">
-                  Bafain Solar Dryer
-                </p>
                 <h2 className="mt-2 font-['Sora'] text-xl font-semibold text-slate-900">
                   Invoice #{orderId.slice(0, 10).toUpperCase()}
                 </h2>
