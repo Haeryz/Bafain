@@ -111,6 +111,35 @@ const ORDER_STATUS_OPTIONS = [
 const SIDEBAR_WIDTH = 270
 const SIDEBAR_COLLAPSED_WIDTH = 92
 
+const ADMIN_THEME = {
+  loadingBackground: "linear-gradient(140deg, #1b2434, #27344a)",
+  loginBackground:
+    "radial-gradient(1200px 680px at 50% -12%, rgba(148, 163, 184, 0.2), transparent 58%), linear-gradient(145deg, #111827, #1f2937)",
+  loginCardBackground: "rgba(19, 30, 46, 0.9)",
+  loginCardBorder: "1px solid rgba(148, 163, 184, 0.24)",
+  darkTextPrimary: "#e5edf8",
+  darkTextMuted: "#a8b8d0",
+  darkLink: "#9eb6dd",
+  darkLinkAccent: "#d2b48c",
+  loginInputBg: "#f8fafc",
+  loginInputBorder: "#cbd5e1",
+  appBackground: "#eef2f7",
+  sidebarBackground: "linear-gradient(180deg, #1a2436, #1f2d44 42%, #18263a)",
+  sidebarText: "#d9e2f0",
+  sidebarActiveBorder: "1px solid rgba(129, 140, 248, 0.34)",
+  sidebarActiveBackground:
+    "linear-gradient(135deg, rgba(99, 102, 241, 0.28), rgba(59, 130, 246, 0.16))",
+  sidebarIdleBorder: "1px solid rgba(148, 163, 184, 0.18)",
+  sidebarIdleBackground: "rgba(255, 255, 255, 0.03)",
+  sidebarInsetBorder: "1px solid rgba(148, 163, 184, 0.2)",
+  sidebarInsetBackground: "rgba(255, 255, 255, 0.04)",
+  headerBackground: "#f8fafc",
+  headerBorder: "#e2e8f0",
+  chartBar: "#6d7fdd",
+  chartLine: "#5f77cf",
+  chartPointBorder: "#e2e8f0",
+}
+
 const getSidebarNavItemStyle = (
   active: boolean,
   collapsed: boolean
@@ -118,12 +147,12 @@ const getSidebarNavItemStyle = (
   borderRadius: 14,
   padding: collapsed ? "0.75rem 0.7rem" : "0.75rem 0.9rem",
   border: active
-    ? "1px solid rgba(56, 189, 248, 0.45)"
-    : "1px solid rgba(148, 163, 184, 0.2)",
+    ? ADMIN_THEME.sidebarActiveBorder
+    : ADMIN_THEME.sidebarIdleBorder,
   background: active
-    ? "linear-gradient(135deg, rgba(37, 99, 235, 0.35), rgba(14, 165, 233, 0.22))"
-    : "rgba(255, 255, 255, 0.04)",
-  color: "#e2e8f0",
+    ? ADMIN_THEME.sidebarActiveBackground
+    : ADMIN_THEME.sidebarIdleBackground,
+  color: ADMIN_THEME.sidebarText,
   fontWeight: 600,
   justifyContent: collapsed ? "center" : "flex-start",
 })
@@ -559,6 +588,11 @@ export function Admin() {
     (acc, value) => acc + value,
     0
   )
+  const loginInputStyle: CSSProperties = {
+    backgroundColor: ADMIN_THEME.loginInputBg,
+    borderColor: ADMIN_THEME.loginInputBorder,
+    color: "#1f2937",
+  }
   const sidebarWidth = sidebarCollapsed
     ? SIDEBAR_COLLAPSED_WIDTH
     : SIDEBAR_WIDTH
@@ -578,11 +612,13 @@ export function Admin() {
     return (
       <div
         className="d-flex min-vh-100 align-items-center justify-content-center"
-        style={{ background: "linear-gradient(140deg, #0f172a, #1e293b)" }}
+        style={{ background: ADMIN_THEME.loadingBackground }}
       >
-        <div className="text-center text-white">
+        <div className="text-center" style={{ color: ADMIN_THEME.darkTextPrimary }}>
           <CSpinner color="light" />
-          <p className="mt-3 mb-0">Memeriksa akses admin...</p>
+          <p className="mt-3 mb-0" style={{ color: ADMIN_THEME.darkTextMuted }}>
+            Memeriksa akses admin...
+          </p>
         </div>
       </div>
     )
@@ -592,19 +628,25 @@ export function Admin() {
     return (
       <div
         className="d-flex min-vh-100 align-items-center"
-        style={{ background: "linear-gradient(140deg, #0b1020, #111827)" }}
+        style={{ background: ADMIN_THEME.loginBackground }}
       >
         <CContainer>
           <CRow className="justify-content-center">
             <CCol md={7} lg={5}>
               <CCard
                 className="border-0 shadow-lg"
-                style={{ background: "rgba(15, 23, 42, 0.92)", color: "#e2e8f0" }}
+                style={{
+                  background: ADMIN_THEME.loginCardBackground,
+                  color: ADMIN_THEME.darkTextPrimary,
+                  border: ADMIN_THEME.loginCardBorder,
+                }}
               >
                 <CCardBody className="p-4 p-lg-5">
                   <div className="mb-4">
-                    <h2 className="h4 mb-1 text-white">Admin System</h2>
-                    <p className="mb-0 text-body-secondary">
+                    <h2 className="h4 mb-1" style={{ color: ADMIN_THEME.darkTextPrimary }}>
+                      Admin System
+                    </h2>
+                    <p className="mb-0" style={{ color: ADMIN_THEME.darkTextMuted }}>
                       Login menggunakan akun admin untuk membuka /admin.
                     </p>
                   </div>
@@ -623,6 +665,7 @@ export function Admin() {
                         value={loginEmail}
                         onChange={(event) => setLoginEmail(event.target.value)}
                         placeholder="admin@bafain.com"
+                        style={loginInputStyle}
                       />
                     </div>
                     <div className="mb-4">
@@ -634,26 +677,36 @@ export function Admin() {
                         value={loginPassword}
                         onChange={(event) => setLoginPassword(event.target.value)}
                         placeholder="Masukkan password admin"
+                        style={loginInputStyle}
                       />
                     </div>
                     <CButton
                       type="submit"
-                      color="primary"
-                      className="w-100"
+                      className="w-100 border-0"
+                      style={{
+                        background:
+                          "linear-gradient(135deg, #6476d9, #7387dc)",
+                        color: "#f8fafc",
+                      }}
                       disabled={loginSubmitting}
                     >
                       {loginSubmitting ? "Memproses..." : "Login Admin"}
                     </CButton>
                   </CForm>
                   <div className="mt-4 d-flex justify-content-between small">
-                    <Link to="/beranda" className="text-info text-decoration-none">
+                    <Link
+                      to="/beranda"
+                      className="text-decoration-none"
+                      style={{ color: ADMIN_THEME.darkLink }}
+                    >
                       Kembali ke beranda
                     </Link>
                     {isLoggedIn && (
                       <button
                         type="button"
                         onClick={logout}
-                        className="btn btn-link p-0 text-warning text-decoration-none"
+                        className="btn btn-link p-0 text-decoration-none"
+                        style={{ color: ADMIN_THEME.darkLinkAccent }}
                       >
                         Logout sesi saat ini
                       </button>
@@ -669,7 +722,7 @@ export function Admin() {
   }
 
   return (
-    <div className="min-vh-100" style={{ backgroundColor: "#f4f6fb" }}>
+    <div className="min-vh-100" style={{ backgroundColor: ADMIN_THEME.appBackground }}>
       <CSidebar
         colorScheme="dark"
         className="border-0 d-flex flex-column"
@@ -682,9 +735,9 @@ export function Admin() {
           height: "100vh",
           overflowY: "auto",
           zIndex: 1030,
-          background: "linear-gradient(180deg, #0b1736, #0f244f 38%, #07142c)",
+          background: ADMIN_THEME.sidebarBackground,
           padding: "0.85rem 0.7rem 0.8rem",
-          boxShadow: "8px 0 30px rgba(2, 6, 23, 0.25)",
+          boxShadow: "8px 0 28px rgba(15, 23, 42, 0.2)",
           transition: "width 0.22s ease",
         }}
       >
@@ -711,8 +764,8 @@ export function Admin() {
             className="m-0 d-flex align-items-center fw-semibold text-white rounded-4"
             style={{
               padding: sidebarCollapsed ? "0.85rem 0.65rem" : "0.85rem 0.95rem",
-              border: "1px solid rgba(148, 163, 184, 0.24)",
-              background: "rgba(255, 255, 255, 0.04)",
+              border: ADMIN_THEME.sidebarInsetBorder,
+              background: ADMIN_THEME.sidebarInsetBackground,
               justifyContent: sidebarCollapsed ? "center" : "flex-start",
             }}
           >
@@ -728,7 +781,7 @@ export function Admin() {
           {!sidebarCollapsed && (
             <div
               className="small text-uppercase fw-semibold mb-2"
-              style={{ color: "rgba(226, 232, 240, 0.65)", paddingLeft: "0.5rem" }}
+              style={{ color: "rgba(217, 226, 240, 0.66)", paddingLeft: "0.5rem" }}
             >
               Navigation
             </div>
@@ -785,8 +838,8 @@ export function Admin() {
           <div
             className="rounded-4"
             style={{
-              border: "1px solid rgba(148, 163, 184, 0.24)",
-              background: "rgba(255, 255, 255, 0.05)",
+              border: ADMIN_THEME.sidebarInsetBorder,
+              background: ADMIN_THEME.sidebarInsetBackground,
               padding: "0.85rem 0.9rem",
               textAlign: sidebarCollapsed ? "center" : "left",
             }}
@@ -814,11 +867,17 @@ export function Admin() {
         }}
       >
         <CHeader
-          className="bg-white border-bottom px-3 py-2 shadow-sm"
-          style={{ position: "sticky", top: 0, zIndex: 1020 }}
+          className="border-bottom px-3 py-2"
+          style={{
+            position: "sticky",
+            top: 0,
+            zIndex: 1020,
+            backgroundColor: ADMIN_THEME.headerBackground,
+            borderColor: ADMIN_THEME.headerBorder,
+          }}
         >
-          <CHeaderBrand className="fw-semibold">
-            <CIcon icon={cilCog} className="me-2 text-primary" />
+          <CHeaderBrand className="fw-semibold" style={{ color: "#334155" }}>
+            <CIcon icon={cilCog} className="me-2" style={{ color: "#6476d9" }} />
             Admin Control Center
           </CHeaderBrand>
           <CHeaderNav className="ms-auto d-flex align-items-center">
@@ -903,7 +962,7 @@ export function Admin() {
                             datasets: [
                               {
                                 label: "Jumlah Order",
-                                backgroundColor: "#4f46e5",
+                                backgroundColor: ADMIN_THEME.chartBar,
                                 borderRadius: 10,
                                 data: statusChartData,
                               },
@@ -994,9 +1053,9 @@ export function Admin() {
                               {
                                 label: `Penjualan ${effectiveSalesYear}`,
                                 data: monthlySalesTotals,
-                                borderColor: "#2563eb",
-                                pointBackgroundColor: "#2563eb",
-                                pointBorderColor: "#ffffff",
+                                borderColor: ADMIN_THEME.chartLine,
+                                pointBackgroundColor: ADMIN_THEME.chartLine,
+                                pointBorderColor: ADMIN_THEME.chartPointBorder,
                                 tension: 0.35,
                                 fill: false,
                               },
