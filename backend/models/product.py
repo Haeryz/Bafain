@@ -38,6 +38,7 @@ class ProductGalleryInput(BaseModel):
 class ProductCreateRequest(BaseModel):
   title: str = Field(min_length=1, max_length=300)
   price_idr: int = Field(ge=0)
+  stock: int = Field(default=20, ge=0)
   price_unit: Optional[str] = Field(default=None, max_length=50)
   description: Optional[str] = None
   image_url: Optional[str] = None
@@ -51,6 +52,7 @@ class ProductCreateRequest(BaseModel):
 class ProductUpdateRequest(BaseModel):
   title: Optional[str] = Field(default=None, min_length=1, max_length=300)
   price_idr: Optional[int] = Field(default=None, ge=0)
+  stock: Optional[int] = Field(default=None, ge=0)
   price_unit: Optional[str] = Field(default=None, max_length=50)
   description: Optional[str] = None
   image_url: Optional[str] = None
@@ -107,6 +109,7 @@ class ProductResponse(BaseModel):
   id: str
   title: str
   price_idr: int
+  stock: Optional[int] = None
   price_unit: Optional[str] = None
   description: Optional[str] = None
   image_url: Optional[str] = None

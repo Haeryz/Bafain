@@ -209,6 +209,7 @@ export type ProductGalleryInput = {
 export type AdminProductCreatePayload = {
   title: string
   price_idr: number
+  stock?: number | null
   price_unit?: string | null
   description?: string | null
   image_url?: string | null
@@ -222,6 +223,7 @@ export type AdminProductCreatePayload = {
 export type AdminProductUpdatePayload = {
   title?: string
   price_idr?: number
+  stock?: number | null
   price_unit?: string | null
   description?: string | null
   image_url?: string | null

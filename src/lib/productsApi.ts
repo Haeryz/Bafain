@@ -132,6 +132,7 @@ export type Product = {
   id: string
   title: string
   price_idr: number
+  stock?: number | null
   price_unit?: string | null
   description?: string | null
   image_url?: string | null

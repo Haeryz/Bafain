@@ -18,6 +18,7 @@ import {
   CCol,
   CContainer,
   CForm,
+  CFormCheck,
   CFormInput,
   CFormLabel,
   CFormSelect,
@@ -27,6 +28,10 @@ import {
   CHeaderNav,
   CNavItem,
   CNavLink,
+  CModal,
+  CModalBody,
+  CModalHeader,
+  CModalTitle,
   COffcanvas,
   COffcanvasBody,
   COffcanvasHeader,
@@ -83,6 +88,7 @@ type ProductFormState = {
   id: string | null
   title: string
   price_idr: string
+  stock: string
   price_unit: string
   description: string
   image_url: string
@@ -161,6 +167,7 @@ const defaultProductForm: ProductFormState = {
   id: null,
   title: "",
   price_idr: "",
+  stock: "0",
   price_unit: "",
   description: "",
   image_url: "",
@@ -277,10 +284,13 @@ export function Admin() {
   const [products, setProducts] = useState<Product[]>([])
   const [productsLoading, setProductsLoading] = useState(false)
   const [productsError, setProductsError] = useState<string | null>(null)
+  const [selectedProductIds, setSelectedProductIds] = useState<string[]>([])
+  const [productFormOpen, setProductFormOpen] = useState(false)
   const [productForm, setProductForm] = useState<ProductFormState>(
     defaultProductForm
   )
   const [productSubmitting, setProductSubmitting] = useState(false)
+  const [deletingSelectedProducts, setDeletingSelectedProducts] = useState(false)
 
   const canManageOrders = useMemo(
     () =>
@@ -293,6 +303,11 @@ export function Admin() {
     () => admin?.role === "admin" || admin?.role === "super_admin",
     [admin?.role]
   )
+  const isAllProductsSelected = useMemo(() => {
+    if (products.length === 0) return false
+    const selectedSet = new Set(selectedProductIds)
+    return products.every((product) => selectedSet.has(product.id))
+  }, [products, selectedProductIds])
 
   const loadDashboard = useCallback(async () => {
     setDashboardLoading(true)
@@ -384,6 +399,30 @@ export function Admin() {
     if (!admin) return
     void loadAllData()
   }, [admin, loadAllData])
+
+  useEffect(() => {
+    setSelectedProductIds((prev) => {
+      const availableIds = new Set(products.map((product) => product.id))
+      const next = prev.filter((id) => availableIds.has(id))
+      return next.length === prev.length ? prev : next
+    })
+  }, [products])
+
+  useEffect(() => {
+    if (!feedback) return
+    if (feedback.color !== "success") return
+    if (!feedback.message.toLowerCase().includes("produk berhasil dihapus")) return
+
+    const timeoutId = window.setTimeout(() => {
+      setFeedback((current) => {
+        if (!current) return current
+        if (current.message !== feedback.message) return current
+        return null
+      })
+    }, 3500)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [feedback])
 
   const handleAdminLogin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -480,10 +519,15 @@ export function Admin() {
       id: product.id,
       title: product.title || "",
       price_idr: String(product.price_idr || 0),
+      stock:
+        typeof product.stock === "number" && Number.isFinite(product.stock)
+          ? String(product.stock)
+          : "20",
       price_unit: product.price_unit || "",
       description: product.description || "",
       image_url: product.image_url || "",
     })
+    setProductFormOpen(true)
     setActivePanel("products")
   }
 
@@ -493,12 +537,24 @@ export function Admin() {
 
     const title = productForm.title.trim()
     const priceValue = Number(productForm.price_idr)
+    const stockValue = Number(productForm.stock)
     if (!title) {
       setFeedback({ color: "warning", message: "Nama produk wajib diisi." })
       return
     }
     if (!Number.isFinite(priceValue) || priceValue < 0) {
       setFeedback({ color: "warning", message: "Harga produk tidak valid." })
+      return
+    }
+    if (!Number.isFinite(stockValue) || stockValue < 0) {
+      setFeedback({ color: "warning", message: "Stock produk tidak valid." })
+      return
+    }
+    if (!Number.isInteger(stockValue)) {
+      setFeedback({
+        color: "warning",
+        message: "Stock harus berupa bilangan bulat.",
+      })
       return
     }
 
@@ -508,6 +564,7 @@ export function Admin() {
       const payload = {
         title,
         price_idr: Math.round(priceValue),
+        stock: stockValue,
         ...(productForm.price_unit.trim()
           ? { price_unit: productForm.price_unit.trim() }
           : {}),
@@ -535,6 +592,7 @@ export function Admin() {
       }
 
       setProductForm(defaultProductForm)
+      setProductFormOpen(false)
       await Promise.all([loadProducts(), loadDashboard()])
     } catch (error) {
       setFeedback({ color: "danger", message: getErrorMessage(error) })
@@ -556,6 +614,79 @@ export function Admin() {
     } catch (error) {
       setFeedback({ color: "danger", message: getErrorMessage(error) })
     }
+  }
+
+  const handleDeleteSelectedProducts = async () => {
+    if (!canManageProducts) return
+    if (selectedProductIds.length === 0) {
+      setFeedback({ color: "warning", message: "Belum ada produk yang dicentang." })
+      return
+    }
+
+    const ok = window.confirm(
+      `Hapus ${selectedProductIds.length} produk yang dicentang? Aksi ini tidak bisa dibatalkan.`
+    )
+    if (!ok) return
+
+    setDeletingSelectedProducts(true)
+    setFeedback(null)
+    try {
+      const results = await Promise.allSettled(
+        selectedProductIds.map((productId) => deleteAdminProduct(productId))
+      )
+      const successCount = results.filter((result) => result.status === "fulfilled").length
+      const failedCount = results.length - successCount
+
+      if (successCount > 0) {
+        await Promise.all([loadProducts(), loadDashboard()])
+      }
+
+      if (failedCount === 0) {
+        setSelectedProductIds([])
+        setFeedback({
+          color: "success",
+          message: `${successCount} produk berhasil dihapus.`,
+        })
+        return
+      }
+
+      setFeedback({
+        color: "warning",
+        message: `${successCount} produk berhasil dihapus, ${failedCount} gagal dihapus.`,
+      })
+    } catch (error) {
+      setFeedback({ color: "danger", message: getErrorMessage(error) })
+    } finally {
+      setDeletingSelectedProducts(false)
+    }
+  }
+
+  const openCreateProductForm = () => {
+    if (!canManageProducts) return
+    setProductForm(defaultProductForm)
+    setProductFormOpen(true)
+  }
+
+  const closeProductForm = () => {
+    setProductFormOpen(false)
+    setProductForm(defaultProductForm)
+  }
+
+  const toggleProductSelection = (productId: string) => {
+    setSelectedProductIds((prev) =>
+      prev.includes(productId)
+        ? prev.filter((id) => id !== productId)
+        : [...prev, productId]
+    )
+  }
+
+  const toggleSelectAllProducts = () => {
+    setSelectedProductIds((prev) => {
+      if (products.length === 0) return []
+      const allIds = products.map((product) => product.id)
+      const allSelected = allIds.every((id) => prev.includes(id))
+      return allSelected ? [] : allIds
+    })
   }
 
   const statusChartLabels = dashboard?.orders_by_status.map((x) => x.status) || []
@@ -1235,198 +1366,348 @@ export function Admin() {
           )}
 
           {activePanel === "products" && (
-            <CRow className="g-3">
-              <CCol xl={4}>
-                <CCard className="border-0 shadow-sm">
-                  <CCardHeader className="bg-white fw-semibold">
-                    {productForm.id ? "Edit Produk" : "Tambah Produk"}
-                  </CCardHeader>
-                  <CCardBody>
-                    {!canManageProducts && (
-                      <CAlert color="warning" className="mb-3">
-                        Role {admin.role} hanya dapat melihat data produk.
-                      </CAlert>
-                    )}
-                    <CForm onSubmit={handleSubmitProduct}>
-                      <div className="mb-3">
-                        <CFormLabel htmlFor="admin-product-title">Nama Produk</CFormLabel>
-                        <CFormInput
-                          id="admin-product-title"
-                          value={productForm.title}
-                          onChange={(event) =>
-                            setProductForm((prev) => ({
-                              ...prev,
-                              title: event.target.value,
-                            }))
-                          }
-                          placeholder="Masukkan nama produk"
-                          disabled={!canManageProducts}
+            <CCard className="border-0 shadow-sm">
+              <CCardHeader className="bg-white d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <div className="d-flex align-items-center gap-2">
+                  <span className="fw-semibold">Daftar Produk</span>
+                  <span className="small text-body-secondary">
+                    {selectedProductIds.length} dipilih
+                  </span>
+                </div>
+                <div className="d-flex flex-wrap align-items-center gap-3">
+                  <CFormCheck
+                    id="admin-products-select-all"
+                    label="Centang semua"
+                    checked={isAllProductsSelected}
+                    onChange={() => toggleSelectAllProducts()}
+                    disabled={products.length === 0}
+                    style={{ borderColor: "#111827" }}
+                  />
+                  {canManageProducts ? (
+                    <>
+                      <CButton
+                        color="danger"
+                        variant="outline"
+                        onClick={() => {
+                          void handleDeleteSelectedProducts()
+                        }}
+                        disabled={
+                          selectedProductIds.length === 0 || deletingSelectedProducts
+                        }
+                      >
+                        {deletingSelectedProducts ? "Menghapus..." : "Hapus terpilih"}
+                      </CButton>
+                      <CButton color="primary" onClick={openCreateProductForm}>
+                        Tambah Produk
+                      </CButton>
+                    </>
+                  ) : (
+                    <span className="small text-body-secondary">Mode read-only</span>
+                  )}
+                </div>
+              </CCardHeader>
+              <CCardBody>
+                {!canManageProducts && (
+                  <CAlert color="warning" className="mb-3">
+                    Role {admin.role} hanya dapat melihat data produk.
+                  </CAlert>
+                )}
+                {productsError && <CAlert color="danger">{productsError}</CAlert>}
+                {productsLoading ? (
+                  <div className="text-center py-5">
+                    <CSpinner />
+                  </div>
+                ) : (
+                  <CTable hover align="middle" style={{ tableLayout: "fixed", width: "100%" }}>
+                    <CTableHead>
+                      <CTableRow>
+                        <CTableHeaderCell
+                          style={{ width: "4%", paddingLeft: "0.5rem", paddingRight: "0.5rem" }}
                         />
-                      </div>
-                      <div className="mb-3">
-                        <CFormLabel htmlFor="admin-product-price">Harga (IDR)</CFormLabel>
-                        <CFormInput
-                          id="admin-product-price"
-                          type="number"
-                          min={0}
-                          value={productForm.price_idr}
-                          onChange={(event) =>
-                            setProductForm((prev) => ({
-                              ...prev,
-                              price_idr: event.target.value,
-                            }))
-                          }
-                          disabled={!canManageProducts}
-                        />
-                      </div>
-                      <div className="mb-3">
-                        <CFormLabel htmlFor="admin-product-unit">Satuan Harga</CFormLabel>
-                        <CFormInput
-                          id="admin-product-unit"
-                          value={productForm.price_unit}
-                          onChange={(event) =>
-                            setProductForm((prev) => ({
-                              ...prev,
-                              price_unit: event.target.value,
-                            }))
-                          }
-                          placeholder="contoh: unit"
-                          disabled={!canManageProducts}
-                        />
-                      </div>
-                      <div className="mb-3">
-                        <CFormLabel htmlFor="admin-product-image">URL Gambar</CFormLabel>
-                        <CFormInput
-                          id="admin-product-image"
-                          value={productForm.image_url}
-                          onChange={(event) =>
-                            setProductForm((prev) => ({
-                              ...prev,
-                              image_url: event.target.value,
-                            }))
-                          }
-                          placeholder="https://..."
-                          disabled={!canManageProducts}
-                        />
-                      </div>
-                      <div className="mb-3">
-                        <CFormLabel htmlFor="admin-product-description">Deskripsi</CFormLabel>
-                        <CFormTextarea
-                          id="admin-product-description"
-                          rows={5}
-                          value={productForm.description}
-                          onChange={(event) =>
-                            setProductForm((prev) => ({
-                              ...prev,
-                              description: event.target.value,
-                            }))
-                          }
-                          placeholder="Deskripsi produk"
-                          disabled={!canManageProducts}
-                        />
-                      </div>
-                      {canManageProducts && (
-                        <div className="d-flex gap-2">
-                          <CButton type="submit" color="primary" disabled={productSubmitting}>
-                            {productSubmitting
-                              ? "Menyimpan..."
-                              : productForm.id
-                                ? "Simpan Perubahan"
-                                : "Tambah Produk"}
-                          </CButton>
-                          {productForm.id && (
-                            <CButton
-                              type="button"
-                              color="secondary"
-                              variant="outline"
-                              onClick={() => setProductForm(defaultProductForm)}
-                            >
-                              Batal
-                            </CButton>
-                          )}
-                        </div>
+                        <CTableHeaderCell style={{ width: "23%", paddingLeft: "0.25rem" }}>
+                          Produk
+                        </CTableHeaderCell>
+                        <CTableHeaderCell style={{ width: "32%", paddingLeft: "0.75rem" }}>
+                          Deskripsi
+                        </CTableHeaderCell>
+                        <CTableHeaderCell
+                          className="text-start"
+                          style={{ width: "8%", paddingLeft: "0.75rem" }}
+                        >
+                          Stock
+                        </CTableHeaderCell>
+                        <CTableHeaderCell
+                          className="text-start"
+                          style={{ width: "18%", paddingLeft: "0.75rem" }}
+                        >
+                          Harga
+                        </CTableHeaderCell>
+                        <CTableHeaderCell
+                          className="text-start"
+                          style={{ width: "15%", paddingLeft: "0.75rem" }}
+                        >
+                          Aksi
+                        </CTableHeaderCell>
+                      </CTableRow>
+                    </CTableHead>
+                    <CTableBody>
+                      {products.length === 0 && (
+                        <CTableRow>
+                          <CTableDataCell colSpan={6} className="text-center py-4">
+                            Belum ada produk.
+                          </CTableDataCell>
+                        </CTableRow>
                       )}
-                    </CForm>
-                  </CCardBody>
-                </CCard>
-              </CCol>
-
-              <CCol xl={8}>
-                <CCard className="border-0 shadow-sm">
-                  <CCardHeader className="bg-white fw-semibold">Daftar Produk</CCardHeader>
-                  <CCardBody>
-                    {productsError && <CAlert color="danger">{productsError}</CAlert>}
-                    {productsLoading ? (
-                      <div className="text-center py-5">
-                        <CSpinner />
-                      </div>
-                    ) : (
-                      <CTable responsive hover align="middle">
-                        <CTableHead>
-                          <CTableRow>
-                            <CTableHeaderCell>Produk</CTableHeaderCell>
-                            <CTableHeaderCell>Harga</CTableHeaderCell>
-                            <CTableHeaderCell style={{ minWidth: 230 }}>
-                              Aksi
-                            </CTableHeaderCell>
-                          </CTableRow>
-                        </CTableHead>
-                        <CTableBody>
-                          {products.length === 0 && (
-                            <CTableRow>
-                              <CTableDataCell colSpan={3} className="text-center py-4">
-                                Belum ada produk.
-                              </CTableDataCell>
-                            </CTableRow>
-                          )}
-                          {products.map((product) => (
-                            <CTableRow key={product.id}>
-                              <CTableDataCell>
-                                <div className="fw-semibold">{product.title}</div>
-                                <div className="text-body-secondary small text-truncate">
-                                  {product.description || "-"}
+                      {products.map((product) => (
+                        <CTableRow key={product.id}>
+                          <CTableDataCell
+                            style={{ width: "4%", paddingLeft: "0.5rem", paddingRight: "0.5rem" }}
+                          >
+                            <CFormCheck
+                              className="m-0"
+                              checked={selectedProductIds.includes(product.id)}
+                              onChange={() => toggleProductSelection(product.id)}
+                              aria-label={`Pilih produk ${product.title}`}
+                              style={{ borderColor: "#111827" }}
+                            />
+                          </CTableDataCell>
+                          <CTableDataCell style={{ paddingLeft: "0.25rem" }}>
+                            <div className="d-flex align-items-center gap-3">
+                              <div
+                                className="overflow-hidden rounded"
+                                style={{
+                                  width: 48,
+                                  height: 48,
+                                  backgroundColor: "#f1f5f9",
+                                  flex: "0 0 48px",
+                                }}
+                              >
+                                <img
+                                  src={product.image_url || "/hero-team.svg"}
+                                  alt={product.title || "Produk"}
+                                  className="h-100 w-100 object-fit-cover"
+                                />
+                              </div>
+                              <div style={{ minWidth: 0 }}>
+                                <div className="fw-semibold text-truncate">
+                                  {product.title}
                                 </div>
-                              </CTableDataCell>
-                              <CTableDataCell>
-                                {formatIdr(product.price_idr)}{" "}
-                                {product.price_unit ? `/${product.price_unit}` : ""}
-                              </CTableDataCell>
-                              <CTableDataCell>
-                                <div className="d-flex gap-2">
-                                  <CButton
-                                    size="sm"
-                                    color="info"
-                                    variant="outline"
-                                    onClick={() => handleEditProduct(product)}
-                                  >
-                                    Edit
-                                  </CButton>
-                                  {canManageProducts && (
-                                    <CButton
-                                      size="sm"
-                                      color="danger"
-                                      variant="outline"
-                                      onClick={() => {
-                                        void handleDeleteProduct(product.id)
-                                      }}
-                                    >
-                                      Hapus
-                                    </CButton>
-                                  )}
-                                </div>
-                              </CTableDataCell>
-                            </CTableRow>
-                          ))}
-                        </CTableBody>
-                      </CTable>
-                    )}
-                  </CCardBody>
-                </CCard>
-              </CCol>
-            </CRow>
+                              </div>
+                            </div>
+                          </CTableDataCell>
+                          <CTableDataCell
+                            className="text-body-secondary"
+                            style={{ paddingLeft: "0.75rem" }}
+                          >
+                            <div
+                              style={{
+                                display: "-webkit-box",
+                                WebkitLineClamp: 2,
+                                WebkitBoxOrient: "vertical",
+                                overflow: "hidden",
+                                wordBreak: "break-word",
+                              }}
+                            >
+                              {product.description?.trim() || "-"}
+                            </div>
+                          </CTableDataCell>
+                          <CTableDataCell
+                            className="text-start text-nowrap"
+                            style={{ paddingLeft: "0.75rem" }}
+                          >
+                            {typeof product.stock === "number"
+                              ? product.stock.toLocaleString("id-ID")
+                              : "20"}
+                          </CTableDataCell>
+                          <CTableDataCell
+                            className="text-start fw-semibold text-nowrap"
+                            style={{ paddingLeft: "0.75rem" }}
+                          >
+                            {formatIdr(product.price_idr)}
+                            {product.price_unit ? ` / ${product.price_unit}` : ""}
+                          </CTableDataCell>
+                          <CTableDataCell className="text-start" style={{ paddingLeft: "0.75rem" }}>
+                            {canManageProducts ? (
+                              <div className="d-flex justify-content-start flex-wrap gap-2">
+                                <CButton
+                                  size="sm"
+                                  color="info"
+                                  variant="outline"
+                                  onClick={() => handleEditProduct(product)}
+                                >
+                                  Edit
+                                </CButton>
+                                <CButton
+                                  size="sm"
+                                  color="danger"
+                                  variant="outline"
+                                  onClick={() => {
+                                    void handleDeleteProduct(product.id)
+                                  }}
+                                >
+                                  Hapus
+                                </CButton>
+                              </div>
+                            ) : (
+                              <span className="text-body-secondary small">Read-only</span>
+                            )}
+                          </CTableDataCell>
+                        </CTableRow>
+                      ))}
+                    </CTableBody>
+                  </CTable>
+                )}
+              </CCardBody>
+            </CCard>
           )}
         </CContainer>
       </div>
+
+      <CModal
+        alignment="center"
+        size="lg"
+        scrollable
+        visible={productFormOpen}
+        onClose={closeProductForm}
+      >
+        <CModalHeader>
+          <CModalTitle>
+            {productForm.id ? "Edit Produk" : "Tambah Produk"}
+          </CModalTitle>
+        </CModalHeader>
+        <CModalBody>
+          {!canManageProducts && (
+            <CAlert color="warning" className="mb-3">
+              Role {admin.role} hanya dapat melihat data produk.
+            </CAlert>
+          )}
+          <CForm onSubmit={handleSubmitProduct}>
+            <div className="mb-3">
+              <CFormLabel htmlFor="admin-product-title">Nama Produk</CFormLabel>
+              <CFormInput
+                id="admin-product-title"
+                value={productForm.title}
+                onChange={(event) =>
+                  setProductForm((prev) => ({
+                    ...prev,
+                    title: event.target.value,
+                  }))
+                }
+                placeholder="Masukkan nama produk"
+                disabled={!canManageProducts}
+              />
+            </div>
+            <div className="mb-3">
+              <CFormLabel htmlFor="admin-product-price">Harga (IDR)</CFormLabel>
+              <CFormInput
+                id="admin-product-price"
+                type="number"
+                min={0}
+                value={productForm.price_idr}
+                onChange={(event) =>
+                  setProductForm((prev) => ({
+                    ...prev,
+                    price_idr: event.target.value,
+                  }))
+                }
+                disabled={!canManageProducts}
+              />
+            </div>
+            <div className="mb-3">
+              <CFormLabel htmlFor="admin-product-stock">Stock</CFormLabel>
+              <CFormInput
+                id="admin-product-stock"
+                type="number"
+                min={0}
+                step={1}
+                value={productForm.stock}
+                onChange={(event) =>
+                  setProductForm((prev) => ({
+                    ...prev,
+                    stock: event.target.value,
+                  }))
+                }
+                placeholder="contoh: 20"
+                disabled={!canManageProducts}
+              />
+            </div>
+            <div className="mb-3">
+              <CFormLabel htmlFor="admin-product-unit">Satuan Harga</CFormLabel>
+              <CFormInput
+                id="admin-product-unit"
+                value={productForm.price_unit}
+                onChange={(event) =>
+                  setProductForm((prev) => ({
+                    ...prev,
+                    price_unit: event.target.value,
+                  }))
+                }
+                placeholder="contoh: unit"
+                disabled={!canManageProducts}
+              />
+            </div>
+            <div className="mb-3">
+              <CFormLabel htmlFor="admin-product-image">URL Gambar</CFormLabel>
+              <CFormInput
+                id="admin-product-image"
+                value={productForm.image_url}
+                onChange={(event) =>
+                  setProductForm((prev) => ({
+                    ...prev,
+                    image_url: event.target.value,
+                  }))
+                }
+                placeholder="https://..."
+                disabled={!canManageProducts}
+              />
+            </div>
+            <div className="mb-3">
+              <CFormLabel htmlFor="admin-product-description">Deskripsi</CFormLabel>
+              <CFormTextarea
+                id="admin-product-description"
+                rows={5}
+                value={productForm.description}
+                onChange={(event) =>
+                  setProductForm((prev) => ({
+                    ...prev,
+                    description: event.target.value,
+                  }))
+                }
+                placeholder="Deskripsi produk"
+                disabled={!canManageProducts}
+              />
+            </div>
+            {canManageProducts ? (
+              <div className="d-flex gap-2">
+                <CButton type="submit" color="primary" disabled={productSubmitting}>
+                  {productSubmitting
+                    ? "Menyimpan..."
+                    : productForm.id
+                      ? "Simpan Perubahan"
+                      : "Tambah Produk"}
+                </CButton>
+                <CButton
+                  type="button"
+                  color="secondary"
+                  variant="outline"
+                  onClick={closeProductForm}
+                >
+                  Batal
+                </CButton>
+              </div>
+            ) : (
+              <CButton
+                type="button"
+                color="secondary"
+                variant="outline"
+                onClick={closeProductForm}
+              >
+                Tutup
+              </CButton>
+            )}
+          </CForm>
+        </CModalBody>
+      </CModal>
 
       <COffcanvas
         placement="end"

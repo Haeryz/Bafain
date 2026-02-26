@@ -131,6 +131,7 @@ def create_product(firestore: Client, payload: ProductCreateRequest):
   product_data = {
     "title": payload.title,
     "price_idr": payload.price_idr,
+    "stock": payload.stock,
     "price_unit": payload.price_unit,
     "description": payload.description,
     "image_url": payload.image_url,
@@ -181,6 +182,7 @@ def update_product(firestore: Client, product_id: str, payload: ProductUpdateReq
     k: v for k, v in {
       "title": payload.title,
       "price_idr": payload.price_idr,
+      "stock": payload.stock,
       "price_unit": payload.price_unit,
       "description": payload.description,
       "image_url": payload.image_url,
